@@ -10,7 +10,7 @@ void           rosco_url_unref         (RoscoURL     *url);
 
 typedef struct RoscoNode RoscoNode;
 typedef struct RoscoNodeFuncs {
-  void (*disconnect)    (RoscoNode  *node, 
+  void (*disconnected)  (RoscoNode  *node, 
                          RoscoError *error,
                          rosco_bool  will_retry,
                          void       *funcs_data);
@@ -28,10 +28,7 @@ RoscoNode          *rosco_node_new              (RoscoURL             *master_ur
                                                  RoscoDestroyFunc      funcs_data_destroy);
 RoscoSubscription * rosco_node_subscribe        (RoscoNode            *node,
                                                  const char           *topic,
-                                                 RoscoMessageType     *type,
-                                                 RoscoMessageHandler   handler,
-                                                 void                 *handler_data,
-                                                 RoscoDestroyFunc      handler_data_destroy);
+                                                 RoscoMessageType     *type);
 
 RoscoPublisher    * rosco_node_add_publisher    (RoscoNode            *node,
                                                  const char           *topic,
