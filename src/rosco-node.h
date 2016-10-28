@@ -26,14 +26,6 @@ RoscoNode          *rosco_node_new              (RoscoURL             *master_ur
                                                  const RoscoNodeFuncs *funcs, 
                                                  void                 *funcs_data,
                                                  RoscoDestroyFunc      funcs_data_destroy);
-RoscoSubscription * rosco_node_subscribe        (RoscoNode            *node,
-                                                 const char           *topic,
-                                                 RoscoMessageType     *type);
-
-RoscoPublisher    * rosco_node_add_publisher    (RoscoNode            *node,
-                                                 const char           *topic,
-                                                 RoscoMessageType     *type);
-
 // register service implementations
 typedef void (*RoscoServiceFunc)  (RoscoService     *service,
                                    RoscoMessage     *input,
@@ -48,4 +40,5 @@ RoscoService       *rosco_node_register_service (RoscoNode            *node,
                                                  RoscoServiceFunc      func,
                                                  void                  func_data,
                                                  RoscoDestroyFunc      func_data_destroy);
+void                rosco_service_unregister    (RoscoService         *service);
 

@@ -55,8 +55,8 @@ RoscoTcpClient *rosco_tcp_client_new                      (const char          *
                                                            uint16_t             port,
                                                            RoscoTcpClientFuncs *funcs,
                                                            void                *func_data,
-                                                           RoscoDestroyFunc     destroy,
-                                                           RoscoError         **error);
+                                                           RoscoDestroyFunc     destroy);
+void            rosco_tcp_client_connect                  (RoscoTcpClient *client);
 void            rosco_tcp_client_outgoing_buffer_changed  (RoscoTcpClient *client);
 void            rosco_tcp_client_incoming_buffer_changed  (RoscoTcpClient *client);
 void            rosco_tcp_client_close                    (RoscoTcpClient *client);

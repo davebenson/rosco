@@ -60,14 +60,14 @@ void  rosco_dispatch_remove_timer (RoscoDispatchTimer *);
 
 /* querying the timer (UNIMPLEMENTED) */
 
-rosco_boolean  rosco_dispatch_timer_is_wallclock (RoscoDispatchTimer *);
+rosco_bool   rosco_dispatch_timer_is_wallclock (RoscoDispatchTimer *);
 uint64_t     rosco_dispatch_timer_get_expiration_millis (RoscoDispatchTimer *);
 
 
 /* see effective-timers.txt
    
  */
-rosco_boolean  rosco_supports_effective_timers (void);
+rosco_bool     rosco_supports_effective_timers (void);
 
 /* Idle functions */
 typedef void (*RoscoIdleFunc)   (void               *func_data);
@@ -91,7 +91,7 @@ typedef struct _RoscoDispatchChildInfo RoscoDispatchChildInfo;
 struct _RoscoDispatchChildInfo
 {
   int process_id;
-  rosco_boolean killed;           /* killed by signal */
+  rosco_bool killed;           /* killed by signal */
   int value;                    /* exit status or signal number */
 };
 typedef void (*RoscoChildHandler) (RoscoDispatchChildInfo  *info,
@@ -148,10 +148,10 @@ struct _RoscoDispatch
   RoscoFileDescriptorNotify *notifies_desired;
 
   /* If TRUE, return immediately. */
-  rosco_boolean has_idle;
+  rosco_bool has_idle;
 
   /* number of milliseconds to wait if no events occur */
-  rosco_boolean has_timeout;
+  rosco_bool has_timeout;
   unsigned long timeout_secs;
   unsigned timeout_usecs;
 

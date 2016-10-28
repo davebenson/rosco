@@ -49,3 +49,5 @@ union RoscoMutableXML {
 };
 
 RoscoBinaryData *rosco_mutable_xml_serialize (const RoscoMutableXML *in);
+RoscoMutableXML_Document *rosco_mutable_xml_document_parse (RoscoBuffer *buffer, RoscoError **error);
+
