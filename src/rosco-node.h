@@ -26,6 +26,7 @@ RoscoNode          *rosco_node_new              (RoscoURL             *master_ur
                                                  const RoscoNodeFuncs *funcs, 
                                                  void                 *funcs_data,
                                                  RoscoDestroyFunc      funcs_data_destroy);
+
 // register service implementations
 typedef void (*RoscoServiceFunc)  (RoscoService     *service,
                                    RoscoMessage     *input,
