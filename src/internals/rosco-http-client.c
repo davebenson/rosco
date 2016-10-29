@@ -38,13 +38,17 @@ rosco_http_client__tcp_client__connected (RoscoTcpClient *client)
 static void
 rosco_http_client__tcp_client__new_data_available (RoscoTcpClient *client)
 {
+  // scan header
+  ...
+
+  // parse contents
   ...
 }
 
 static void
 rosco_http_client__tcp_client__outgoing_drained (RoscoTcpClient *client)
 {
-  ...
+  // TODO: for now there's no real contention support
 }
 
 static void
