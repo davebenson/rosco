@@ -62,7 +62,7 @@ void     rosco_buffer_append_string       (RoscoBuffer    *buffer,
                                            const char   *string);
 ROSCO_INLINE_FUNC void rosco_buffer_append_byte(RoscoBuffer    *buffer, 
                                            uint8_t       byte);
-void      rosco_buffer_append_byte_f      (RoscoBuffer    *buffer, 
+void     rosco_buffer_append_byte_f       (RoscoBuffer    *buffer, 
                                            uint8_t       byte);
 void     rosco_buffer_append_repeated_byte(RoscoBuffer    *buffer, 
                                            size_t        count,

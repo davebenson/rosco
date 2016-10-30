@@ -122,8 +122,4 @@ void rosco_http_client_make_request (RoscoHttpClient *client,
     {
       rosco_buffer_append (&tcp->outgoing, (const uint8_t *) "\n", 1);
     }
-  
 }
-
-
-

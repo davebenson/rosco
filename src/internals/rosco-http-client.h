@@ -6,6 +6,9 @@ typedef struct _RoscoHttpClient RoscoHttpClient;
 RoscoHttpClient *rosco_http_client_new (void);
 
 struct _RoscoHttpRequest {
+  char *host;
+  uint16_t port;
+
   char *method;
   char *path;
 
@@ -28,6 +31,8 @@ struct _RosHttpResponse {
   size_t body_length;
   uint8_t *body_data;
 };
+
+RoscoHttpClient * rosco_http_client_default (void);
 
 void rosco_http_client_make_request (RoscoHttpClient *client,
                                      RoscoHttpRequest *request,
