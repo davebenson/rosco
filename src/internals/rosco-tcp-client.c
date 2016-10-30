@@ -1,13 +1,12 @@
 
-g       #include <netdb.h>
-static rosco_bool
+#include <netdb.h>
 
 
-
-RoscoTcpClient *rosco_tcp_client_new                      (const char          *hostname_or_ip,
-                                                           uint16_t             port,
-                                                           RoscoTcpClientFuncs *funcs,
-                                                           void                *func_data)
+RoscoTcpClient *
+rosco_tcp_client_new                      (const char          *hostname_or_ip,
+                                           uint16_t             port,
+                                           RoscoTcpClientFuncs *funcs,
+                                           void                *func_data)
 {
   RoscoTcpClient *rv = ROSCO_NEW (RoscoTcpClient);
   rv->fd = -1;
@@ -28,6 +27,43 @@ RoscoTcpClient *rosco_tcp_client_new                      (const char          *
   return rv;
 }
 
+static void
+client_failed (RoscoTcpClient *client, RoscoErrorCode code, const char *format, ...)
+{
+  va_list args;
+  va_start (args, format);
+  RoscoError *error = rosco_error_new_valist (ROSCO_ERROR_BAD_ADDRESS_FAMILY, format, args);
+  client->state = ROSCO_TCP_CLIENT_FAILED;
+  if (client->funcs.failed != NULL)
+    client->funcs.failed (client, error);
+  rosco_error_unref (error);
+}
+
+static void
+handle_client_connect_ready (RoscoFileDescriptor fd,
+                             unsigned          events,
+                             void             *callback_data)
+{
+  RoscoTcpClient *client = callback_data;
+  assert (client->fd == fd);
+  assert ((events & ROSCO_EVENT_WRITABLE) == ROSCO_EVENT_WRITABLE);
+  assert (client->state == ROSCO_TCP_CLIENT_CONNECTING);
+  int err;
+  socklen_t err_size = sizeof (err);
+  if (getsockopt (client->fd, SOL_SOCKET, SO_ERROR, &err, &err_size) < 0)
+    assert (0);
+  if (err == 0)
+    {
+      client->state = ROSCO_TCP_CLIENT_CONNECTED;
+      maybe_do_write (client);
+      rosco_dispatch_watch_fd (rosco_dispatch_default (), client->fd,
+                               ROSCO_EVENT_READABLE | (client->outgoing.size > 0 ? ROSCO_EVENT_WRITABLE : 0),
+                               handle_connected_client_io, client);
+    }
+  else
+    {
+}
+
 void
 rosco_tcp_client_connect (RoscoTcpClient *client)
 {
@@ -40,13 +76,7 @@ rosco_tcp_client_connect (RoscoTcpClient *client)
       struct hostent *ent = gethostbyname(client->host.name);		// NOTE: blocks!!!
       if (ent == NULL)
         {
-          client->state = ROSCO_TCP_CLIENT_FAILED;
-          if (client->funcs.failed != NULL)
-            {
-              RoscoError *error = rosco_error_new (ROSCO_ERROR_NAME_LOOKUP_FAILED, "host looking for '%s' failed", client->host.name);
-              client->funcs.failed (client, error);
-              rosco_error_unref (error);
-            }
+          client_failed (client, ROSCO_ERROR_NAME_LOOKUP_FAILED, "host looking for '%s' failed", client->host.name);
 	  return;
         }
       if (ent->h_addrtype == AF_INET)
@@ -66,10 +96,7 @@ rosco_tcp_client_connect (RoscoTcpClient *client)
         }
       else
         {
-	  RoscoError *error = rosco_error_new (ROSCO_ERROR_BAD_ADDRESS_FAMILY, "only ipv4 and ipv6 supported");
-          if (client->funcs.failed != NULL)
-	    client->funcs.failed (client, error);
-	  rosco_error_unref (error);
+          client_failed (client, ROSCO_ERROR_BAD_ADDRESS_FAMILY, "only ipv4 and ipv6 supported");
           return;
         }
     }
@@ -95,7 +122,8 @@ rosco_tcp_client_connect (RoscoTcpClient *client)
   client->fd = socket (address_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
   if (client->fd < 0)
     {
-      ...
+      client_failed (client, ROSCO_ERROR_BAD_ADDRESS_FAMILY, "creating socket failed: %s", strerror (errno));
+      return;
     }
 
 #if 0
@@ -105,7 +133,17 @@ rosco_tcp_client_connect (RoscoTcpClient *client)
   // do connect
   if (connect (client->fd, &addr, sizeof (addr)) < 0)
     {
-      ...
+      if (errno == EINPROGRESS)
+        {
+          rosco_dispatch_watch_fd (rosco_dispatch_default (), client->fd, ROSCO_EVENT_WRITABLE,
+                                   handle_fd_connect, client);
+        }
+      else
+        {
+          client_failed (client, ROSCO_ERROR_CONNECT_FAILED,
+                         "error connecting to remote host: %s", strerror (errno));
+          return;
+        }
     }
 }
 

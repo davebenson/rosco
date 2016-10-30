@@ -27,6 +27,9 @@ struct RoscoError {
 RoscoError *rosco_error_new    (RoscoErrorCode code,
                                 const char    *format,
                                 ...);
+RoscoError *rosco_error_new_valist    (RoscoErrorCode code,
+                                       const char    *format,
+                                       va_list        args);
 RoscoError *rosco_error_ref    (RoscoError    *error);
 void        rosco_error_unref  (RoscoError    *error);
 
