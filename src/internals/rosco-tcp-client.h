@@ -49,6 +49,8 @@ struct _RoscoTcpClient {
   } host;
 
   uint16_t port;
+
+  uint16_t trapping_writable : 1;
 };
 
 RoscoTcpClient *rosco_tcp_client_new                      (const char          *hostname_or_ip,

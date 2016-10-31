@@ -150,28 +150,49 @@ rosco_tcp_client_connect (RoscoTcpClient *client)
 void
 rosco_tcp_client_outgoing_buffer_changed  (RoscoTcpClient *client)
 {
-...
+  if (!client->trapping_writable && client->incoming.size > 0)
+    {
+      rosco_dispatch_watch_fd (rosco_dispatch_default (),
+                               client->fd,
+                               ROSCO_EVENT_READABLE|ROSCO_EVENT_WRITABLE,
+                               client);
+      client->trapping_writable = 1;
+    }
 }
 
 void
 rosco_tcp_client_incoming_buffer_changed  (RoscoTcpClient *client)
 {
-...
+  (void) client;
 }
 
 void
 rosco_tcp_client_close (RoscoTcpClient *client)
 {
-...
+  if (client->fd >= 0)
+    {
+      rosco_dispatch_close_fd (rosco_dispatch_default (), client->fd);
+      client->fd = -1;
+    }
 }
 
 void
 rosco_tcp_client_ref (RoscoTcpClient *client)
 {
-...
+  assert(client->ref_count > 0);
+  ++(client->ref_count);
 }
 void
 rosco_tcp_client_unref (RoscoTcpClient *client)
 {
-...
+  assert(client->ref_count > 0);
+  if (--(client->ref_count) == 0)
+    {
+      rosco_tcp_client_close (client);
+      rosco_buffer_init (&client->incoming);
+      rosco_buffer_init (&client->outgoing);
+      if (client->host_type == ROSCO_TCP_CLIENT_HOST_TYPE_NAME)
+        rosco_free (client->host.name);
+      rosco_free (client);
+    }
 }
