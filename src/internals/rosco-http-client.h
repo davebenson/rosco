@@ -37,5 +37,4 @@ RoscoHttpClient * rosco_http_client_default (void);
 void rosco_http_client_make_request (RoscoHttpClient *client,
                                      RoscoHttpRequest *request,
                                      RoscoHttpResponseHandler handler,
-                                     void             *handler_data,
-                                     RoscoDestroyFunc  handler_data_destroy);
+                                     void             *handler_data);
