@@ -66,26 +66,26 @@ struct _RoscoMessage
 };
 
 
-typedef struct RoscoMessageContextType RoscoMessageContextType;
-typedef struct RoscoMessageContext RoscoMessageContext;
+typedef struct RoscoTypeContextType RoscoTypeContextType;
+typedef struct RoscoTypeContext RoscoTypeContext;
 
-struct RoscoMessageContextType {
+struct RoscoTypeContextType {
   RoscoType *type;
-  RoscoMessageContextType *left, *right, *parent;
+  RoscoTypeContextType *left, *right, *parent;
   rosco_bool is_red;
 };
 
-struct _RoscoMessageContext
+struct _RoscoTypeContext
 {
   size_t n_dirs;
   char **dirs;
-  RoscoMessageContextType *types_by_name;
+  RoscoTypeContextType *types_by_name;
 };
 
-RoscoMessageContext *rosco_message_context_new     (unsigned             n_dirs,
-                                                    char               **dirs);
-RoscoType           *rosco_message_context_get     (RoscoMessageContext *message,
-                                                    const char          *name,
-                                                    RoscoError         **error);
-void                 rosco_message_context_destroy (RoscoMessageContext *context);
+RoscoTypeContext    *rosco_type_context_new     (unsigned             n_message_dirs,
+                                                 char               **message_dirs);
+RoscoType           *rosco_type_context_get     (RoscoTypeContext    *context,
+                                                 const char          *name,
+                                                 RoscoError         **error);
+void                 rosco_type_context_destroy (RoscoTypeContext    *context);
 
