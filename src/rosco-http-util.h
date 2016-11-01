@@ -1,4 +1,8 @@
 
+#include "rosco-buffer.h"
+#include "rosco-types.h"
+#include "rosco-error.h"
+
 typedef enum {
   ROSCO_HTTP_SCAN_STATUS_SUCCESS,
   ROSCO_HTTP_SCAN_STATUS_INCOMPLETE,
