@@ -15,4 +15,7 @@ src/dsk/.dirstamp
 src/dsk/codepages/*.o
 src/dsk/codepages/.deps
 src/dsk/codepages/.dirstamp
+src/dsk/programs/*.o
+src/dsk/programs/.deps
+src/dsk/programs/.dirstamp
 librosco.a

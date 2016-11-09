@@ -1,11 +1,12 @@
+#include "dsk/dsk.h"
 
-typedef void (*XmlrpcHandler) (RoscoMutableXML_Document *response,
+typedef void (*XmlrpcHandler) (DskXml *response,
                                void *handler_data);
 
 static void
-do_xmlrpc (RoscoURL *base_url,
+do_xmlrpc (DskUrl *url,
            const char *method,
-           RoscoMutableXML_Document *input,
+           DskXml *input,
            XmlrpcHandler handler,
            void *handler_data)
 {

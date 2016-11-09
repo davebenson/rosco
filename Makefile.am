@@ -112,4 +112,7 @@ src/dsk/dsk-codegen.c \
 src/dsk/dsk-byte-undoubler.c \
 src/dsk/dsk-udp-socket.c \
 src/dsk/dsk-path.c \
-src/dsk/dsk-quote-printable.c
+src/dsk/dsk-quote-printable.c \
+src/rosco-node.c \
+src/rosco-type-system.c \
+src/rosco-xmlrpc-client.c
