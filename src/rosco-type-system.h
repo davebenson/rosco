@@ -25,16 +25,17 @@ struct RoscoType {
 
   rosco_bool (*serialize)(RoscoType *type,
                           const void *ptr_value,
-                          RoscoBuffer *out,
-                          RoscoError **error);
+                          DskBuffer *out,
+                          DskError **error);
   rosco_bool (*deserialize)(RoscoType *type,
-                            RoscoBufferIterator *in_out,
+                            DskBufferIterator *in_out,
                             void        *ptr_value_out,
-                            RoscoError **error);
+                            DskError **error);
 
-  RoscoType *vararray_type;
+  // derived types
+  RoscoArrayType *vararray_type;
   unsigned n_fixed_array_types;
-  RoscoType **fixed_array_types;
+  RoscoArrayType **fixed_array_types;
 };
 
 struct RoscoMessageType {
@@ -47,6 +48,12 @@ struct RoscoArrayType {
   RoscoType base;
   RoscoType *element_type;
   ssize_t length;                       // or -1 for variable length
+};
+
+struct RoscoArray
+{
+  size_t count;
+  void *data;
 };
 
 typedef struct _RoscoMessageTypeField RoscoMessageTypeField;

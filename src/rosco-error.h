@@ -17,19 +17,14 @@ typedef enum {
   ...
 } RoscoErrorCode;
 
-typedef struct RoscoError RoscoError;{
-struct RoscoError {
-  RoscoErrorCode code;
-  char *message;
-  RoscoError *cause;
-  unsigned ref_count;
-};
-RoscoError *rosco_error_new    (RoscoErrorCode code,
+extern DskErrorDataType rosco_error_code_dsk_error_type;
+dsk_boolean dsk_error_get_rosco_error_code      (const DskError *error,
+                                                 RoscoErrorCode *out);
+void        dsk_error_set_rosco_error_code      (DskError       *error,
+                                                 RoscoErrorCode code);
+
+// convenience for dsk_error_new() + dsk_error_set_rosco_error_code()
+DskError   *rosco_error_new    (RoscoErrorCode code,
                                 const char    *format,
                                 ...);
-RoscoError *rosco_error_new_valist    (RoscoErrorCode code,
-                                       const char    *format,
-                                       va_list        args);
-RoscoError *rosco_error_ref    (RoscoError    *error);
-void        rosco_error_unref  (RoscoError    *error);
 

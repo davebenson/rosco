@@ -16,6 +16,26 @@ rosco_message_context_new     (unsigned             n_dirs,
   return rv;
 }
 
+static RoscoType *
+_rosco_type_get_array_type         (RoscoType *type)
+{
+  if (type->vararray_type == NULL)
+    {
+      RoscoArrayType *atype = ROSCO_NEW0 (RoscoArrayType);
+      atype->base.type = ROSCO_BUILTIN_TYPE_ARRAY;
+      atype->base.cname = ...
+      atype->base.name = ...
+      atype->base.sizeof_ctype = sizeof (RoscoArray);
+      atype->base.alignof_ctype = alignof (RoscoArray);
+      atype->base.serialize = array_serialize;
+      atype->base.deserialize = array_deserialize;
+      atype->element_type = type;
+      atype->length = -1;
+      type->vararray_type = (RoscoType *) atype;
+    }
+  return type->vararray_type;
+}
+
 static RoscoMessageContextType *
 _rosco_message_context_get     (RoscoMessageContext *context,
                                 const char          *normalized_name,
