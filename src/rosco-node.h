@@ -17,7 +17,10 @@ typedef struct RoscoNodeFuncs {
                              RoscoError *error);
 } RoscoNodeFuncs;
 
+DskURL             *rosco_master_url            (void);
+
 RoscoNode          *rosco_node_new              (DskURL               *master_url,
+						 const char           *name,
                                                  const RoscoNodeFuncs *funcs, 
                                                  void                 *funcs_data,
                                                  RoscoDestroyFunc      funcs_data_destroy);
@@ -55,4 +58,5 @@ RoscoService       *rosco_node_advertise_service(RoscoNode            *node,
                                                  void                  func_data,
                                                  RoscoDestroyFunc      func_data_destroy);
 void                rosco_service_unregister    (RoscoService         *service);
+
 
