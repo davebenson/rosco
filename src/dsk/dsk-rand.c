@@ -63,12 +63,13 @@ dsk_rand_init (DskRand *rand)
 void
 dsk_rand_init_seed (DskRand* rand, uint32_t seed)
 {
+  unsigned i;
   /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
   /* In the previous version (see above), MSBs of the    */
   /* seed affect only MSBs of the array s[].            */
       
   rand->s[0] = seed;
-  for (unsigned i = 1; i < 16; i++) {
+  for (i = 1; i < 16; i++) {
     rand->s[i] = 1812433253ULL * (rand->s[i-1] ^ (rand->s[i-1] >> 30)) + i;
   }
 }

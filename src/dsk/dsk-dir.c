@@ -612,7 +612,7 @@ retry_sys_open:
   fd = dsk_dir_sys_open (dir, path, flags, 0);
   if (fd < 0)
     {
-      if (dsk_fd_creation_failed ())
+      if (dsk_fd_creation_failed (errno))
         goto retry_sys_open;
       return NULL;
     }
