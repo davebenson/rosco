@@ -33,7 +33,6 @@ src/dsk/dsk-c-quoter.c \
 src/dsk/dsk-xml-parser.c \
 src/dsk/dsk-octet-filter-identity.c \
 src/dsk/dsk-inlines.c \
-src/dsk/dsk-ssl.c \
 src/dsk/dsk-ts0-builtins.c \
 src/dsk/dsk-ascii.c \
 src/dsk/dsk-mime.c \
