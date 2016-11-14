@@ -1,29 +1,29 @@
 
 typedef struct RoscoNode RoscoNode;
 typedef struct RoscoNodeFuncs {
-  void (*disconnected)      (RoscoNode  *node, 
-                             RoscoError *error,
-                             rosco_bool  will_retry,
-                             void       *funcs_data);
-  void (*connected)         (RoscoNode  *node, 
-                             void       *funcs_data);
-  void (*connect_failed)    (RoscoNode  *node, 
-                             RoscoError *error,
-                             rosco_bool  will_retry,
-                             void       *funcs_data);
-  void (*close_started)     (RoscoNode  *node);
-  void (*close_succeeded)   (RoscoNode  *node);
-  void (*close_failed)      (RoscoNode  *node,
-                             RoscoError *error);
+  void (*disconnected)      (RoscoNode   *node, 
+                             DskError    *error,
+                             dsk_boolean  will_retry,
+                             void        *funcs_data);
+  void (*connected)         (RoscoNode   *node, 
+                             void        *funcs_data);
+  void (*connect_failed)    (RoscoNode   *node, 
+                             DskError    *error,
+                             dsk_boolean  will_retry,
+                             void        *funcs_data);
+  void (*close_started)     (RoscoNode   *node);
+  void (*close_succeeded)   (RoscoNode   *node);
+  void (*close_failed)      (RoscoNode   *node,
+                             DskError    *error);
 } RoscoNodeFuncs;
 
-DskURL             *rosco_master_url            (void);
+DskUrl             *rosco_master_url            (void);
 
-RoscoNode          *rosco_node_new              (DskURL               *master_url,
+RoscoNode          *rosco_node_new              (DskUrl               *master_url,
 						 const char           *name,
                                                  const RoscoNodeFuncs *funcs, 
                                                  void                 *funcs_data,
-                                                 RoscoDestroyFunc      funcs_data_destroy);
+                                                 DskDestroyNotify      funcs_data_destroy);
 void               rosco_node_close             (RoscoNode            *node,
 
 // topics
@@ -44,7 +44,7 @@ RoscoSubscriber *   rosco_subscriber_new           (RoscoNode            *node,
                                                     RoscoMessageType     *type,
                                                     RoscoMessageHandler   handler,
                                                     void                 *handler_data,
-                                                    RoscoDestroyFunc      handler_data_destroy);
+                                                    DskDestroyNotify      handler_data_destroy);
 void                rosco_subscriber_destroy       (RoscoSubscriber      *sub);
 
 
