@@ -26,6 +26,28 @@ RoscoNode          *rosco_node_new              (DskURL               *master_ur
                                                  RoscoDestroyFunc      funcs_data_destroy);
 void               rosco_node_close             (RoscoNode            *node,
 
+// topics
+// publishers and subscribers are both owned by the node,
+// so you only need to destroy them if you are managing pub/subs dynamically.
+// Most simple nodes will just have a fairly fixed set of pub/subs.
+//
+RoscoPublisher    * rosco_publisher_new            (RoscoNode            *node,
+                                                    const char           *topic,
+                                                    RoscoMessageType     *type);
+void                rosco_publisher_destroy        (RoscoPublisher       *publisher);
+void                rosco_publisher_publish        (RoscoPublisher       *publisher,
+                                                    RoscoMessage         *message);
+
+
+RoscoSubscriber *   rosco_subscriber_new           (RoscoNode            *node,
+                                                    const char           *topic,
+                                                    RoscoMessageType     *type,
+                                                    RoscoMessageHandler   handler,
+                                                    void                 *handler_data,
+                                                    RoscoDestroyFunc      handler_data_destroy);
+void                rosco_subscriber_destroy       (RoscoSubscriber      *sub);
+
+
 // register service implementations
 typedef void (*RoscoClosure) (RoscoMessage *output,
                               void         *closure_data);
