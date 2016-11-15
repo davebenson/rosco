@@ -7,7 +7,7 @@ typedef void (*RoscoNodeExecuteCallback) (DskError *error,
 
 struct RoscoNode
 {
-  DskURL *master_url;
+  DskUrl *master_url;
 };
 
 void rosco_node_execute_on_master (RoscoNode                 *node,
@@ -73,10 +73,11 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   dsk_object_unref (http_client);
 }
 
-RoscoNode          *rosco_node_new              (RoscoURL             *master_url,
-                                                 const RoscoNodeFuncs *funcs, 
-                                                 void                 *funcs_data,
-                                                 RoscoDestroyFunc      funcs_data_destroy)
+RoscoNode *
+rosco_node_new          (DskUrl               *master_url,
+			 const RoscoNodeFuncs *funcs, 
+			 void                 *funcs_data,
+			 RoscoDestroyFunc      funcs_data_destroy)
 {
   ...
 }

@@ -1,3 +1,15 @@
+#ifndef __ROSCO_TYPE_SYSTEM_H_
+#define __ROSCO_TYPE_SYSTEM_H_
+
+typedef struct RoscoType RoscoType;
+typedef struct RoscoMessageType RoscoMessageType;
+typedef struct RoscoMessage RoscoMessage;
+typedef struct RoscoArrayType RoscoArrayType;
+typedef struct RoscoArray RoscoArray;
+typedef struct RoscoMessageTypeField RoscoMessageTypeField;
+
+#include "dsk/dsk.h"
+#include <unistd.h>
 
 typedef enum
 {
@@ -16,6 +28,15 @@ typedef enum
   ROSCO_BUILTIN_TYPE_ARRAY,
 } RoscoBuiltinType;
 
+typedef dsk_boolean (*RoscoTypeSerializeFunc)   (RoscoType         *type,
+                                                 const void        *ptr_value,
+                                                 DskBuffer         *out,
+                                                 DskError         **error);
+typedef dsk_boolean (*RoscoTypeDeserializeFunc) (RoscoType         *type,
+                                                 DskBuffer         *in_out,
+                                                 void              *ptr_value_out,
+                                                 DskError         **error);
+
 struct RoscoType {
   RoscoBuiltinType type;
   char *cname;
@@ -23,14 +44,6 @@ struct RoscoType {
   size_t sizeof_ctype;
   size_t alignof_ctype;
 
-  rosco_bool (*serialize)(RoscoType *type,
-                          const void *ptr_value,
-                          DskBuffer *out,
-                          DskError **error);
-  rosco_bool (*deserialize)(RoscoType *type,
-                            DskBufferIterator *in_out,
-                            void        *ptr_value_out,
-                            DskError **error);
 
   // derived types
   RoscoArrayType *vararray_type;
@@ -56,8 +69,7 @@ struct RoscoArray
   void *data;
 };
 
-typedef struct _RoscoMessageTypeField RoscoMessageTypeField;
-struct _RoscoMessageTypeField
+struct RoscoMessageTypeField
 {
   char *name;
   RoscoType type;
@@ -65,8 +77,7 @@ struct _RoscoMessageTypeField
   size_t offset;
 };
 
-typedef struct _RoscoMessage RoscoMessage;
-struct _RoscoMessage
+struct RoscoMessage
 {
   RoscoMessageType *message_type;
   unsigned ref_count;
@@ -79,7 +90,7 @@ typedef struct RoscoTypeContext RoscoTypeContext;
 struct RoscoTypeContextType {
   RoscoType *type;
   RoscoTypeContextType *left, *right, *parent;
-  rosco_bool is_red;
+  dsk_boolean is_red;
 };
 
 struct _RoscoTypeContext
@@ -93,6 +104,8 @@ RoscoTypeContext    *rosco_type_context_new     (unsigned             n_message_
                                                  char               **message_dirs);
 RoscoType           *rosco_type_context_get     (RoscoTypeContext    *context,
                                                  const char          *name,
-                                                 RoscoError         **error);
+                                                 DskError           **error);
 void                 rosco_type_context_destroy (RoscoTypeContext    *context);
 
+
+#endif
