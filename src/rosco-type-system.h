@@ -44,6 +44,14 @@ struct RoscoType {
   size_t sizeof_ctype;
   size_t alignof_ctype;
 
+  dsk_boolean (*serialize)(RoscoType *type,
+                          const void *ptr_value,
+                          DskBuffer *out,
+                          DskError **error);
+  dsk_boolean (*deserialize)(RoscoType *type,
+                            DskBuffer *in,
+                            void        *ptr_value_out,
+                            DskError **error);
 
   // derived types
   RoscoArrayType *vararray_type;

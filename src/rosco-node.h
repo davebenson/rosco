@@ -8,6 +8,7 @@ typedef struct RoscoSubscriber RoscoSubscriber;
 typedef struct RoscoService RoscoService;
 typedef struct RoscoServiceClient RoscoServiceClient;
 typedef struct RoscoNode RoscoNode;
+
 typedef struct RoscoNodeFuncs {
   void (*disconnected)      (RoscoNode   *node, 
                              DskError    *error,
@@ -64,7 +65,7 @@ RoscoSubscriber *   rosco_subscriber_new           (RoscoNode            *node,
                                                     RoscoSubscriptionHandler   handler,
                                                     void                 *handler_data,
                                                     DskDestroyNotify      handler_data_destroy);
-void                rosco_subscriber_destroy       (RoscoSubscriber      *sub);
+void                rosco_subscriber_close         (RoscoSubscriber      *subscriber);
 
 
 
@@ -98,6 +99,18 @@ void                rosco_service_client_call    (RoscoServiceClient   *service_
                                                   void                 *closure_data,
                                                   DskDestroyNotify      func_data_destroy);
 void                rosco_service_client_unregister (RoscoService         *service);
+
+
+
+RoscoService       *rosco_node_advertise_service(RoscoNode            *node,
+                                                 const char           *service_name,
+                                                 RoscoMessageType     *input,
+                                                 RoscoMessageType     *output,
+                                                 RoscoServiceFunc      func,
+                                                 void                 *func_data,
+                                                 DskDestroyNotify      func_data_destroy);
+void                rosco_service_unregister    (RoscoService         *service);
+
 
 
 #endif

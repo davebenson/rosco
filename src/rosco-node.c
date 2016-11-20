@@ -64,20 +64,29 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   DskHttpClientStreamOptions http_client_stream_options = DSK_HTTP_CLIENT_STREAM_OPTIONS_INIT;
   DskHttpClientStream *http_client = dsk_http_client_stream_new (sink, source, &http_client_stream_options);
   DskHttpClientStreamRequestOptions req_options = DSK_HTTP_CLIENT_STREAM_REQUEST_OPTIONS_INIT;
-  req_options.post_data_len = ...
-  req_options.post_data_slab = ...
-  req_options.
-  dsk_http_client_stream_request (...);
+  DskBuffer buffer = DSK_BUFFER_INIT;
+  dsk_xml_write_to_buffer (input, &buffer);
+  req_options.post_data_length = buffer.size;
+  char *slab = dsk_buffer_empty_to_string (&buffer);
+  req_options.post_data_slab = (const uint8_t *) slab;
+  dsk_http_client_stream_request (http_client, &req_options, &error);
   dsk_object_unref (sink);
   dsk_object_unref (source);
   dsk_object_unref (http_client);
+
+  if (error != NULL)
+    {
+      handler(error, NULL, handler_data);
+      dsk_error_unref (error);
+    }
 }
 
-RoscoNode *
-rosco_node_new          (DskUrl               *master_url,
-			 const RoscoNodeFuncs *funcs, 
-			 void                 *funcs_data,
-			 RoscoDestroyFunc      funcs_data_destroy)
+RoscoNode          *
+rosco_node_new              (DskUrl               *master_url,
+                             const char           *name,
+                             const RoscoNodeFuncs *funcs, 
+                             void                 *funcs_data,
+                             DskDestroyNotify      funcs_data_destroy)
 {
   ...
 }
