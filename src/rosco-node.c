@@ -1,9 +1,6 @@
 #include "dsk/dsk.h"
 #include "rosco-node.h"
-
-typedef void (*RoscoNodeExecuteCallback) (DskError *error,
-                               DskXml *response,
-                               void *handler_data);
+#include "rosco-node-internals.h"
 
 struct RoscoNode
 {
@@ -70,7 +67,10 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   //TODO: set Connection: close
   if (!dsk_client_stream_new (&cs_options, NULL, &sink, &source, &error))
     {
-      callback (error, NULL, callback_data);
+      RoscoNodeExecuteResult result;
+      result.type = ROSCO_NODE_EXECUTE_RESULT_FAILED;
+      result.info.failed.error = error;
+      callback (&result, callback_data);
       dsk_error_unref (error);
       return;
     }
@@ -78,6 +78,7 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   hcs_options.max_pipelined_requests = 0;
   DskHttpClientStream *cs = dsk_http_client_stream_new (sink, source, &hcs_options);
   DskHttpClientStreamRequestOptions request_options = DSK_HTTP_CLIENT_STREAM_REQUEST_OPTIONS_INIT;
+  request_options.method = DSK_HTTP_METHOD_POST;
   DskBuffer xml_buffer = DSK_BUFFER_INIT;
   DskXml *xml = dsk_xmlrpc_make_method_request (method, n_params, params);
   dsk_xml_to_buffer (xml, &xml_buffer);
@@ -94,30 +95,18 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   dsk_http_client_stream_shutdown (cs);
   if (xfer == NULL)
     {
+      RoscoNodeExecuteResult result;
+      result.type = ROSCO_NODE_EXECUTE_RESULT_FAILED;
+      result.info.failed.error = error;
       callback (&result, callback_data);
       dsk_free (request_options.user_data);
       dsk_error_unref (error);
-      return;
+      error = NULL;
     }
 
-  DskHttpClientStreamOptions http_client_stream_options = DSK_HTTP_CLIENT_STREAM_OPTIONS_INIT;
-  DskHttpClientStream *http_client = dsk_http_client_stream_new (sink, source, &http_client_stream_options);
-  DskHttpClientStreamRequestOptions req_options = DSK_HTTP_CLIENT_STREAM_REQUEST_OPTIONS_INIT;
-  DskBuffer buffer = DSK_BUFFER_INIT;
-  dsk_xml_write_to_buffer (input, &buffer);
-  req_options.post_data_length = buffer.size;
-  char *slab = dsk_buffer_empty_to_string (&buffer);
-  req_options.post_data_slab = (const uint8_t *) slab;
-  dsk_http_client_stream_request (http_client, &req_options, &error);
   dsk_object_unref (sink);
   dsk_object_unref (source);
   dsk_object_unref (http_client);
-
-  if (error != NULL)
-    {
-      handler(error, NULL, handler_data);
-      dsk_error_unref (error);
-    }
 }
 
 RoscoNode          *

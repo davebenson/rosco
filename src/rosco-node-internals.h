@@ -3,7 +3,7 @@ typedef enum {
   ROSCO_NODE_EXECUTE_RESULT_SUCCESS,
   ROSCO_NODE_EXECUTE_RESULT_TIMED_OUT,
   ROSCO_NODE_EXECUTE_RESULT_FAILED,
-  ROSCO_NODE_EXECUTE_RESULT_ERROR
+  ROSCO_NODE_EXECUTE_RESULT_FAULTED
 } RoscoNodeExecuteResultType;
 typedef struct {
   RoscoNodeExecuteResultType result;
@@ -16,7 +16,7 @@ typedef struct {
 
     // low-level failure
     struct {
-      RoscoError *error;
+      DskError *error;
     } failed;
 
     // XMLRPC call gave error response
@@ -33,7 +33,8 @@ typedef void (*RoscoNodeExecuteCallback)(RoscoNodeExecuteResult *result,
                                          void                   *callback_data);
 
 
-void rosco_node_execute_on_master (const char                *method,
+void rosco_node_execute_on_master (RoscoNode                 *node,
+                                   const char                *method,
                                    unsigned                   n_params,
                                    DskXmlrpcValue           **params,
                                    RoscoNodeExecuteCallback   callback,
