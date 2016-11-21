@@ -94,6 +94,7 @@
 #include "dsk-xml.h"
 #include "dsk-xml-parser.h"
 #include "dsk-xml-binding.h"
+#include "dsk-xmlrpc.h"
 
 #include "dsk-json.h"
 

@@ -2,7 +2,7 @@
 
 typedef enum {
   DSK_XMLRPC_INT32,
-  DSK_XMLRPC_BOOLEAN
+  DSK_XMLRPC_BOOLEAN,
   DSK_XMLRPC_STRING,
   DSK_XMLRPC_DOUBLE,
   DSK_XMLRPC_TIMESTAMP,
@@ -12,6 +12,7 @@ typedef enum {
 } DskXmlrpcValueType;
 
 typedef struct DskXmlrpcValue DskXmlrpcValue;
+typedef struct DskXmlrpcMember DskXmlrpcMember;
 
 struct DskXmlrpcValue {
   DskXmlrpcValueType type;
@@ -32,6 +33,11 @@ struct DskXmlrpcValue {
   };
 };
 
+struct DskXmlrpcMember {
+  char *name;
+  DskXmlrpcValue value;
+};
+
 DskXml *dsk_xmlrpc_make_method_request (const char *method_name,
                                         size_t      n_params,
                                         const DskXmlrpcValue **params);
@@ -39,3 +45,29 @@ DskXml *dsk_xmlrpc_make_method_response (size_t      n_params,
                                         const DskXmlrpcValue **params);
 DskXml *dsk_xmlrpc_make_fault_response  (int32_t     fault_code,
                                          const char *fault_string);
+
+// --- parsing XMLRPC ---
+typedef struct {
+  const char *method;
+  size_t n_params;
+  DskXmlrpcValue **params;
+} DskXmlrpcMethodRequestInfo;
+dsk_boolean dsk_xmlrpc_parse_method_request (DskXml *xml, DskXmlrpcMethodRequestInfo *out, DskError **error);
+void dsk_xmlrpc_method_request_info_clear (DskXmlrpcMethodRequestInfo *to_clear);
+
+
+typedef struct {
+  dsk_boolean faulted;
+
+  // only for the !faulted case.
+  size_t n_params;
+  DskXmlrpcValue **params;
+
+  // faulted case
+  int32_t fault_code;
+  const char *fault_message;
+} DskXmlrpcMethodResponseInfo;
+
+dsk_boolean dsk_xmlrpc_parse_method_response  (DskXml *xml, DskXmlrpcMethodResponseInfo *out, DskError **error);
+void dsk_xmlrpc_method_response_info_clear (DskXmlrpcMethodResponseInfo *info);
+

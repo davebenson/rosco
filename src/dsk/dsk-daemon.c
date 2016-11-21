@@ -266,7 +266,8 @@ retry_flock:
         }
       if (must_truncate)
         {
-          ftruncate (pid_file_fd, 0);
+          if (ftruncate (pid_file_fd, 0) < 0)
+            dsk_warning ("could not truncate PID file: %s", strerror (errno));
         }
       char buf[32];
       snprintf (buf, sizeof (buf), "%u\n", (unsigned)getpid ());

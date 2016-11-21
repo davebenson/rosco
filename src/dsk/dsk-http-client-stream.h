@@ -103,6 +103,7 @@ struct _DskHttpClientStreamRequestOptions
   /* content-encoding gzip for the post-data */
   dsk_boolean gzip_compress_post_data;          /* gzip post-data internally */
   dsk_boolean post_data_is_gzipped;             /* assume post-data is already gzipped */
+  const char *content_type;
 
   /* Content-encoding gzip for the content-body is
      governed by 'uncompress_content':
@@ -138,6 +139,7 @@ struct _DskHttpClientStreamRequestOptions
   3,                   /* gzip_compression_level */    \
   DSK_FALSE,           /* gzip_compress_post_data */   \
   DSK_FALSE,           /* post_data_is_gzipped */      \
+  NULL,                /* content_type */              \
   DSK_TRUE,            /* uncompress_content */        \
   0,                   /* n_cookies */                 \
   NULL,                /* cookies */                   \

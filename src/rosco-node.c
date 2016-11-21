@@ -10,34 +10,76 @@ struct RoscoNode
   DskUrl *master_url;
 };
 
+typedef struct RoscoXmlrpcHttpClientUserData RoscoXmlrpcHttpClientUserData;
+struct RoscoXmlrpcHttpClientUserData {
+  RoscoNodeExecuteCallback   callback;
+  void                      *callback_data;
+};
+static RoscoXmlrpcHttpClientUserData *
+rosco_xmlrpc_http_client_user_data_new (RoscoNodeExecuteCallback callback,
+                                        void *callback_data)
+{
+  RoscoXmlrpcHttpClientUserData *rv = DSK_NEW (RoscoXmlrpcHttpClientUserData);
+  rv->callback = callback;
+  rv->callback_data = callback_data;
+  return rv;
+}
+
+
+static void
+rosco_xmlrpc_http_client__handle_response         (DskHttpClientStreamTransfer *transfer)
+{
+...
+}
+static void 
+rosco_xmlrpc_http_client__handle_content_complete (DskHttpClientStreamTransfer *transfer)
+{
+...
+}
+static void 
+rosco_xmlrpc_http_client__handle_error            (DskHttpClientStreamTransfer *transfer)
+{
+...
+}
+static void 
+rosco_xmlrpc_http_client__destroy                 (DskHttpClientStreamTransfer *transfer)
+{
+...
+}
+
+static DskHttpClientStreamFuncs rosco_node_http_client_request_funcs = {
+  rosco_xmlrpc_http_client__handle_response,
+  rosco_xmlrpc_http_client__handle_content_complete,
+  rosco_xmlrpc_http_client__handle_error,
+  rosco_xmlrpc_http_client__destroy
+};
+
 void rosco_node_execute_on_master (RoscoNode                 *node,
                                    const char                *method,
                                    unsigned                   n_params,
-                                   DskXmlrpcValue           **params,
+                                   const DskXmlrpcValue     **params,
                                    RoscoNodeExecuteCallback   callback,
                                    void                      *callback_data)
 {
   DskClientStreamOptions cs_options = DSK_CLIENT_STREAM_OPTIONS_INIT;
   DskOctetSink *sink;
   DskOctetSource *source;
+  DskError *error = NULL;
   cs_options.hostname = node->master_url->host;
   cs_options.port = node->master_url->port;
   //TODO: set Connection: close
   if (!dsk_client_stream_new (&cs_options, NULL, &sink, &source, &error))
     {
-      RoscoNodeExecuteResult result;
-      result.type = ROSCO_NODE_EXECUTE_RESULT_FAILED;
-      result.info.failed.error = error;
-      callback (&result, callback_data);
+      callback (error, NULL, callback_data);
       dsk_error_unref (error);
       return;
     }
   DskHttpClientStreamOptions hcs_options = DSK_HTTP_CLIENT_STREAM_OPTIONS_INIT;
   hcs_options.max_pipelined_requests = 0;
-  DskHttpClientStream *cs = dsk_http_client_stream_new (source, sink, &hcs_options);
+  DskHttpClientStream *cs = dsk_http_client_stream_new (sink, source, &hcs_options);
   DskHttpClientStreamRequestOptions request_options = DSK_HTTP_CLIENT_STREAM_REQUEST_OPTIONS_INIT;
   DskBuffer xml_buffer = DSK_BUFFER_INIT;
-  DskXml *xml = dsk_xmlrpc_make_method_request (method_name, n_params, params);
+  DskXml *xml = dsk_xmlrpc_make_method_request (method, n_params, params);
   dsk_xml_to_buffer (xml, &xml_buffer);
   request_options.post_data_length = xml_buffer.size;
   char *xml_string = dsk_buffer_empty_to_string (&xml_buffer);
@@ -52,9 +94,6 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   dsk_http_client_stream_shutdown (cs);
   if (xfer == NULL)
     {
-      RoscoNodeExecuteResult result;
-      result.type = ROSCO_NODE_EXECUTE_RESULT_FAILED;
-      result.info.failed.error = error;
       callback (&result, callback_data);
       dsk_free (request_options.user_data);
       dsk_error_unref (error);

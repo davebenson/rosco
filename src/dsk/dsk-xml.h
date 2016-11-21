@@ -38,6 +38,9 @@ DskXml *dsk_xml_text_new     (const char *str);
 
 DskXml *dsk_xml_new_take_1   (const char *name,
                               DskXml     *child);
+DskXml *dsk_xml_new_take_2   (const char *name,
+                              DskXml     *child1,
+                              DskXml     *child2);
 DskXml *dsk_xml_text_child_new (const char *name,
                                 const char *contents);
 
