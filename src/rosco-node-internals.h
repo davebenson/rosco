@@ -36,6 +36,6 @@ typedef void (*RoscoNodeExecuteCallback)(RoscoNodeExecuteResult *result,
 void rosco_node_execute_on_master (RoscoNode                 *node,
                                    const char                *method,
                                    unsigned                   n_params,
-                                   DskXmlrpcValue           **params,
+                                   const DskXmlrpcValue     **params,
                                    RoscoNodeExecuteCallback   callback,
                                    void                      *callback_data);
