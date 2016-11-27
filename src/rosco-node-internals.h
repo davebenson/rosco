@@ -24,7 +24,7 @@ typedef struct {
       char *message;
       uint32_t code;
       DskXmlrpcValue *error_value;		// always a struct containing the other values
-    } faulted;
+    } faulted
   } info;
 } RoscoNodeExecuteResult;
  
@@ -39,3 +39,46 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
                                    const DskXmlrpcValue     **params,
                                    RoscoNodeExecuteCallback   callback,
                                    void                      *callback_data);
+
+/* --- actual known master-node APIs --- */
+void rosco_node_master_execute_shutdown (RoscoNode                 *node,
+                                         const char                *message,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_get_uri  (RoscoNode                 *node,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_get_pid  (RoscoNode                 *node,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_delete_param     (RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_set_param(RoscoNode                 *node,
+                                         const char                *key,
+                                         DskXmlrpcValue            *value,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_get_param(RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+
+void rosco_node_master_execute_subscribe_param(RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+                     
+void rosco_node_master_execute_unsubscribe_param(RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_has_param(RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);
+void rosco_node_master_execute_get_param_names(RoscoNode                 *node,
+                                         const char                *key,
+			                 RoscoNodeExecuteCallback   callback,
+			                 void                      *callback_data);

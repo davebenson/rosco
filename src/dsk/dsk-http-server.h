@@ -80,6 +80,8 @@ dsk_boolean dsk_http_server_bind_tcp           (DskHttpServer        *server,
                                                 DskIpAddress         *bind_addr,
                                                 unsigned              port,
                                                 DskError            **error);
+dsk_boolean dsk_http_server_get_tcp_port       (DskHttpServer        *server,
+                                                unsigned             *port_out);
 dsk_boolean dsk_http_server_bind_local         (DskHttpServer        *server,
                                                 const char           *path,
                                                 DskError            **error);

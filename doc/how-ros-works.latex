@@ -1,0 +1,45 @@
+\title{How ROS Works, or not}
+\author{Dave Benson }
+\date{\today}
+
+\documentclass[12pt]{article}
+\usepackage{amssymb,amsmath}
+
+\begin{document}
+\maketitle
+
+\section{A Skeptical Introduction to ROS}
+ROS is awesome, but it suffers from a lack of maintenance
+could probably use a general overhaul.
+
+As i tried to use it, I ran into various problems, and
+often i had to work a bit to understand why things are this way.
+
+I myself am hoping to write a nice ROS C Client library that mostly eschews threads (using them only for high-throughout parallel processing, NOT I/O concurrency).
+
+But this guide is just a summary of how it works, along with hopefully-constructive criticism of how to improve it.
+
+\section{A Quick Overview}
+
+\subsection{ROS Core/Master}
+Roughly, this is a process that keeps track of what all the nodes are offering.  Ultimately, it handles params, topics, and services.
+
+Parameters are rarely changed, and are essentially the arguments to the node.  They can change (try "man rosparam"), and it possible to trap parameter changes.
+
+Services are basically "Remote Procedure Calls", namely, functions marshalled through XMLRPC.
+
+\subsection{What a Node Provides}
+In ROSCPP, a single process can only contain a single, simple node.
+
+\subsection{Advertising Interests}
+
+\section{Problems}
+
+\subsection{Threading}
+
+\subsection{Termination}
+
+\subsection{Time and Timing}
+
+
+\end{document}

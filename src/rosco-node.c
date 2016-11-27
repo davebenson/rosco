@@ -26,6 +26,11 @@ struct RoscoNode
 
   RoscoNodeRegistrationState registration_state;
   DskDispatchTimer *registration_retry_timer;
+
+  DskHttpServer *xmlrpc_handler;
+
+  RoscoService *get_loggers;
+  RoscoService *set_loglevel;
 };
 
 static void
@@ -267,6 +272,9 @@ rosco_node_new              (DskUrl               *master_url,
   // register node
   rv->registration_state = ROSCO_NODE_REGISTRATION_PENDING;
   rosco_node_execute_on_master (rv, method_name, nparams, params,...);
+
+  rv->get_loggers = rosco_node_advertise_service (
+
 
 
   return rv;

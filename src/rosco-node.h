@@ -29,7 +29,7 @@ typedef struct RoscoNodeFuncs {
 DskUrl             *rosco_master_url            (void);
 
 RoscoNode          *rosco_node_new              (DskUrl               *master_url,
-						 const char           *name,
+						 const char           *name,		/* passed as caller_id to master */
                                                  const RoscoNodeFuncs *funcs, 
                                                  void                 *funcs_data,
                                                  DskDestroyNotify      funcs_data_destroy);
@@ -101,16 +101,41 @@ void                rosco_service_client_call    (RoscoServiceClient   *service_
 void                rosco_service_client_unregister (RoscoService         *service);
 
 
+typedef struct RoscoNodeServiceAdvertisement {
+  RoscoServiceType     *service_type;
+  const char           *service_name;			// override service_type->name if you wish
+
+  RoscoServiceFunc      func;
+  void                 *func_data;
+  DskDestroyNotify      func_data_destroy;
+
+  RoscoNodeThreadConfig *thread_config;			// NULL means that "func" will be run in the main thread
+} RoscoNodeServiceAdvertisement;
+
+#define ROSCO_NODE_SERVICE_ADVERTISEMENT_INIT(type) 	\
+{ 					 		\
+  (type),		/* service_type */		\
+  NULL,			/* service_name */		\
+  NULL,			/* func */			\
+  NULL,			/* func_data */			\
+  NULL,			/* func_data_destroy */		\
+  NULL,			/* thread_config */		\
+}
 
 RoscoService       *rosco_node_advertise_service(RoscoNode            *node,
-                                                 const char           *service_name,
-                                                 RoscoMessageType     *input,
-                                                 RoscoMessageType     *output,
-                                                 RoscoServiceFunc      func,
-                                                 void                 *func_data,
-                                                 DskDestroyNotify      func_data_destroy);
+                                                 RoscoNodeServiceAdvertisement *advertisement);
 void                rosco_service_unregister    (RoscoService         *service);
 
+
+/* --- threading --- */
+/* All of the above API must be run on the same thread, for each RoscoNode.
+ * If you want to run stuff in another thread, or want to run an API call
+ * FROM another thread, use ... */
+#define ROSCO_NODE_ASSERT_IS_CURRENT_THREAD(node) \
+  assert(rosco_node_is_current_thread (...))
+dsk_boolean rosco_node_is_current_thread (RoscoNode *node);
+
+void rosco_node_run_on_main_thread (RoscoNode *node, RoscoCallback callback, void *callback_data);
 
 
 #endif
