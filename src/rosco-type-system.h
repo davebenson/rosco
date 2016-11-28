@@ -101,16 +101,33 @@ struct RoscoTypeContextType {
   dsk_boolean is_red;
 };
 
+struct RoscoServiceType
+{
+  char *name;
+  RoscoMessageType *input;
+  RoscoMessageType *output;
+};
+
+struct RoscoTypeContextServiceType {
+  RoscoServiceType *type;
+  RoscoTypeContextServiceType *left, *right, *parent;
+  dsk_boolean is_red;
+};
+
 struct _RoscoTypeContext
 {
   size_t n_dirs;
   char **dirs;
   RoscoTypeContextType *types_by_name;
+  RoscoTypeContextServiceType *services_by_name;
 };
 
 RoscoTypeContext    *rosco_type_context_new     (unsigned             n_message_dirs,
                                                  char               **message_dirs);
 RoscoType           *rosco_type_context_get     (RoscoTypeContext    *context,
+                                                 const char          *name,
+                                                 DskError           **error);
+RoscoServiceType    *rosco_type_context_get_service(RoscoTypeContext    *context,
                                                  const char          *name,
                                                  DskError           **error);
 void                 rosco_type_context_destroy (RoscoTypeContext    *context);

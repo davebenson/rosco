@@ -1,6 +1,8 @@
 #include "dsk/dsk.h"
 #include "rosco-node.h"
 #include "rosco-node-internals.h"
+#include "rosco-services/Rosco/GetLoggers.h"
+#include "rosco-services/Rosco/SetLogLevel.h"
 
 typedef enum {
   ROSCO_NODE_REGISTRATION_INIT,
@@ -18,6 +20,7 @@ struct RoscoNode
 {
   DskObject base_instance;
   DskUrl *master_url;
+  RoscoTypeSystem *type_system;
 
   char *name;
   const RoscoNodeFuncs *funcs;
@@ -27,7 +30,8 @@ struct RoscoNode
   RoscoNodeRegistrationState registration_state;
   DskDispatchTimer *registration_retry_timer;
 
-  DskHttpServer *xmlrpc_handler;
+  DskHttpServer *http_server;
+  DskXmlrpcServer *xmlrpc_server;
 
   RoscoService *get_loggers;
   RoscoService *set_loglevel;
@@ -250,6 +254,14 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   dsk_object_unref (cs);
 }
 
+ROSCO__GET_LOGGERS__STATIC_ADVERTISEMENT(get_loggers, Rosco__GetLoggers)
+{
+}
+ROSCO__SET_LOG_LEVEL__STATIC_ADVERTISEMENT(set_log_level, Rosco__SetLogLevel)
+{
+}
+
+
 RoscoNode          *
 rosco_node_new              (DskUrl               *master_url,
                              const char           *name,
@@ -273,9 +285,14 @@ rosco_node_new              (DskUrl               *master_url,
   rv->registration_state = ROSCO_NODE_REGISTRATION_PENDING;
   rosco_node_execute_on_master (rv, method_name, nparams, params,...);
 
-  rv->get_loggers = rosco_node_advertise_service (
+  RoscoNodeServiceAdvertisement tmp;
+  tmp = get_loggers;
+  tmp.func_data = rv;
+  rosco_node_advertise_service (node, &tmp);
 
-
+  tmp = set_log_level;
+  tmp.func_data = rv;
+  rosco_node_advertise_service (node, &tmp);
 
   return rv;
 }

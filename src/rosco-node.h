@@ -80,13 +80,6 @@ typedef void (*RoscoServiceFunc)  (RoscoService     *service,
                                    RoscoClosure      response_callback,
                                    void             *closure_data);
                                    
-RoscoService       *rosco_node_advertise_service (RoscoNode            *node,
-                                                  const char           *service_name,
-                                                  RoscoMessageType     *input,
-                                                  RoscoMessageType     *output,
-                                                  RoscoServiceFunc      func,
-                                                  void                 *func_data,
-                                                  DskDestroyNotify      func_data_destroy);
 void                rosco_service_unregister     (RoscoService         *service);
 
 
@@ -137,5 +130,20 @@ dsk_boolean rosco_node_is_current_thread (RoscoNode *node);
 
 void rosco_node_run_on_main_thread (RoscoNode *node, RoscoCallback callback, void *callback_data);
 
+#define ROSCO_NODE_SERVICE_ADVERTISEMENT_DECLARE_STATIC(c_name, ServiceTypeBaseName) \
+static void \
+c_name ## __impl_func(ServiceTypeBaseName##_Request *input, \
+	              ServiceTypeBaseName##_ResponseClosure closure); \
+static RoscoNodeServiceAdvertisement c_name = { \
+  &ServiceTypeBaseName##_ServiceType, \
+  NULL, \
+  (RoscoServiceFunc) c_name ## __impl_func, \
+  NULL, \
+  NULL, \
+  NULL \
+}; \
+static void \
+c_name ## __impl_func(ServiceTypeBaseName##_Request *input, \
+	              ServiceTypeBaseName##_ResponseClosure closure)
 
 #endif
