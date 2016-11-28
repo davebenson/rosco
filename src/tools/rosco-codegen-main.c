@@ -8,7 +8,16 @@ static const char long_desc[] =
   "Read a bunch of .srv and .msg files from the path, "
   "and generate .h and .c files.\n\n"
 ;
-  const c
+
+static size_t n_source_dirs = 0;
+static char **source_dirs = NULL;
+static DSK_CMDLINE_CALLBACK_DECLARE(add_source_dir)
+{
+  source_dirs = dsk_realloc (source_dirs, sizeof (char *) * (n_source_dirs+1));
+  assert(source_dirs != NULL);
+  source_dirs[n_source_dirs++] = dsk_strdup (arg_value);
+  return TRUE;
+}
 
 int main(int argc, char **argv)
 {
@@ -33,19 +42,23 @@ int main(int argc, char **argv)
   dsk_cmdline_mutually_exclusive (DSK_FALSE, "all", "all-messages", NULL);
   dsk_cmdline_mutually_exclusive (DSK_FALSE, "all", "all-services", NULL);
   dsk_cmdline_add_string (
-    "dest", "Destination for source/include files", NULL, 0,
+    "dest", "Destination for source/include files", "DIR", 0,
     &common_dest_dir
   );
   dsk_cmdline_add_string (
-    "dest-c", "Destination for source files", NULL, 0,
+    "dest-c", "Destination for source files", "DIR", 0,
     &c_dest_dir
   );
   dsk_cmdline_add_string (
-    "dest-h", "Destination for include files", NULL, 0,
+    "dest-h", "Destination for include files", "DIR", 0,
     &h_dest_dir
   );
   dsk_cmdline_mutually_exclusive (DSK_TRUE, "dest", "dest-c", NULL);
   dsk_cmdline_mutually_exclusive (DSK_TRUE, "dest", "dest-h", NULL);
+
+  dsk_cmdline_add_func (
+    "src-dir", "Directory which may include msg or srv directories", "DIR",
+    0, add_source_dir);
 
   dsk_cmdline_process_args (&argc, &argv);
 
@@ -55,5 +68,6 @@ int main(int argc, char **argv)
     dest_h = dsk_strdup_printf ("%s/include", common_dest_dir);
   }
 
+  RoscoTypeContext *ctx = rosco_type_context_new (n_source_dirs, (char**) source_dirs);
   ...
 }
