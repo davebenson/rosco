@@ -1,17 +1,143 @@
+#include "rosco-type-system.h"
+#include <stdalign.h>
+#include <string.h>
+#include "dsk/dsk-rbtree-macros.h"
 
-RoscoMessageContext *
-rosco_message_context_new     (unsigned             n_dirs,
+#define COMPARE_TYPE_CONTEXT_TYPES(a,b, rv) \
+  rv = strcmp(a->type->name, b->type->name)
+#define GET_TYPE_TREE(ctx) \
+  (ctx)->types_by_name, RoscoTypeContextType*, DSK_STD_GET_IS_RED, DSK_STD_SET_IS_RED, parent, left, right, COMPARE_TYPE_CONTEXT_TYPES
+
+#define COMPARE_TYPE_CONTEXT_SERVICE_TYPES(a,b,rv) \
+  rv = strcmp(a->service_type->name, b->service_type->name)
+#define GET_SERVICE_TREE(ctx) \
+  (ctx)->services_by_name, RoscoTypeContextServiceType*, DSK_STD_GET_IS_RED, DSK_STD_SET_IS_RED, parent, left, right, COMPARE_TYPE_CONTEXT_SERVICE_TYPES
+
+#define DEFINE_ROSCO_TYPE(BUILTIN_BASE, c_type, name) \
+{                                                     \
+  ROSCO_BUILTIN_TYPE_##BUILTIN_BASE,                  \
+  #c_type,                                            \
+  #name,                                              \
+  sizeof(c_type),                                     \
+  alignof(c_type),                                    \
+  rosco_type__serialize__##name,                      \
+  rosco_type__deserialize__##name,                    \
+  NULL,                                               \
+  0,                                                  \
+  NULL                                                \
+}
+#define DESERIALIZE_CHECK_MIN_SIZE(name, buffer, min_size, error)   \
+  do{                                                               \
+    if ((buffer)->size < (min_size))                                \
+      {                                                             \
+        dsk_set_error (error, "%s deserialize: end-of-data", name); \
+        return DSK_FALSE;                                           \
+      }                                                             \
+  }while(0)
+
+static dsk_boolean
+rosco_type__serialize__bool(RoscoType *type,
+		            const void *ptr_value,
+		            DskBuffer *out,
+		            DskError **error)
+{
+  uint8_t v = * (const uint8_t *) ptr_value;
+  if (v > 1)
+    {
+      dsk_set_error (error, "bool serialize: bool value must be 0 or 1");
+      return DSK_FALSE;
+    }
+  dsk_buffer_append_byte (out, v);
+  return DSK_TRUE;
+}
+static dsk_boolean
+rosco_type__deserialize__bool(RoscoType *type,
+			      DskBuffer *in,
+			      void        *ptr_value_out,
+			      DskError **error)
+{
+  DESERIALIZE_CHECK_MIN_SIZE("bool", in, 1, error);
+  uint8_t v = dsk_buffer_read_byte (in);
+  if (v > 1)
+    {
+      dsk_set_error (error, "bool deserialize: bool value must be 0 or 1");
+      return DSK_FALSE;
+    }
+  * (uint8_t *) ptr_value_out = v;
+  return DSK_TRUE;
+}
+static RoscoType rosco_type__bool = DEFINE_ROSCO_TYPE(BOOL, rosco_bool, bool);
+
+static dsk_boolean
+rosco_type__serialize__uint8(RoscoType *type,
+		             const void *ptr_value,
+		             DskBuffer *out,
+		             DskError **error)
+{
+  dsk_buffer_append_byte (out, * (const uint8_t *) ptr_value);
+  return DSK_TRUE;
+}
+static dsk_boolean
+rosco_type__deserialize__uint8(RoscoType *type,
+			       DskBuffer *in,
+			       void        *ptr_value_out,
+			       DskError **error)
+{
+  DESERIALIZE_CHECK_MIN_SIZE("uint8", in, 1, error);
+  * (uint8_t *) ptr_value_out = (uint8_t) dsk_buffer_read_byte (in);
+  return DSK_TRUE;
+}
+static RoscoType rosco_type__uint8 = DEFINE_ROSCO_TYPE(UINT8, uint8_t, uint8);
+
+#define rosco_type__serialize__int8 rosco_type__serialize__uint8
+static dsk_boolean
+rosco_type__deserialize__int8 (RoscoType *type,
+			       DskBuffer *in,
+			       void        *ptr_value_out,
+			       DskError **error)
+{
+  DESERIALIZE_CHECK_MIN_SIZE("int8", in, 1, error);
+  * (int8_t *) ptr_value_out = (int8_t) dsk_buffer_read_byte (in);
+  return DSK_TRUE;
+}
+static RoscoType rosco_type__int8 = DEFINE_ROSCO_TYPE(UINT8, uint8_t, uint8);
+
+static void
+type_context_register_type (RoscoTypeContext *ctx, RoscoType *type)
+{
+  RoscoTypeContextType *node = DSK_NEW (RoscoTypeContextType);
+  node->type = type;
+  RoscoTypeContextType *conflict;
+  DSK_RBTREE_INSERT (GET_TYPE_TREE (ctx), node, conflict);
+  assert(conflict == NULL);
+}
+RoscoTypeContext *
+rosco_type_context_new     (unsigned             n_dirs,
                                char               **dirs)
 {
-  RoscoMessageContext *rv = ROSCO_NEW (RoscoMessageContext);
+  RoscoTypeContext *rv = DSK_NEW (RoscoTypeContext);
   rv->n_dirs = n_dirs;
-  rv->dirs = ROSCO_NEW_ARRAY (char *, n_dirs);
+  rv->dirs = DSK_NEW_ARRAY (char *, n_dirs);
   for (unsigned i = 0; i < n_dirs; i++)
-    rv->dirs[i] = rosco_strdup (dirs[i]);
+    rv->dirs[i] = dsk_strdup (dirs[i]);
   rv->types_by_name = NULL;
+  rv->services_by_name = NULL;
 
   // register base types
-  ...
+  type_context_register_type (rv, &rosco_type__bool);
+  type_context_register_type (rv, &rosco_type__uint8);
+  type_context_register_type (rv, &rosco_type__int8);
+  type_context_register_type (rv, &rosco_type__uint16);
+  type_context_register_type (rv, &rosco_type__int16);
+  type_context_register_type (rv, &rosco_type__uint32);
+  type_context_register_type (rv, &rosco_type__int32);
+  type_context_register_type (rv, &rosco_type__uint64);
+  type_context_register_type (rv, &rosco_type__int64);
+  type_context_register_type (rv, &rosco_type__float32);
+  type_context_register_type (rv, &rosco_type__float64);
+  type_context_register_type (rv, &rosco_type__string);
+  type_context_register_type (rv, &rosco_type__time);
+  type_context_register_type (rv, &rosco_type__duration);
 
   return rv;
 }
@@ -36,13 +162,13 @@ _rosco_type_get_array_type         (RoscoType *type)
   return type->vararray_type;
 }
 
-static RoscoMessageContextType *
-_rosco_message_context_get     (RoscoMessageContext *context,
+static RoscoTypeContextType *
+_rosco_type_context_get     (RoscoTypeContext *context,
                                 const char          *normalized_name,
                                 const char          *error_location,
                                 RoscoError         **error)
 {
-  RoscoMessageContextType *mctype;
+  RoscoTypeContextType *mctype;
 #define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->name)
   DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, mctype);
 #undef COMPARE_NORMALIZED_NAME
@@ -103,20 +229,20 @@ _rosco_message_context_get     (RoscoMessageContext *context,
 }
 
 RoscoType *
-rosco_message_context_get     (RoscoMessageContext *context,
+rosco_type_context_get     (RoscoTypeContext *context,
                                const char          *name,
                                RoscoError         **error)
 {
   char *to_free = NULL;
   const char *nname = normalize_type_name (name, &to_free);
-  RoscoMessageContextType *type = _rosco_message_context_get (context, nname, error);
+  RoscoTypeContextType *type = _rosco_type_context_get (context, nname, error);
   if (to_free != NULL)
     free (to_free);
   return type == NULL ? NULL : type->type;
 }
 
 void
-rosco_message_context_destroy (RoscoMessageContext *context)
+rosco_type_context_destroy (RoscoTypeContext *context)
 {
 }
 

@@ -1,8 +1,8 @@
 #include "dsk/dsk.h"
 #include "rosco-node.h"
 #include "rosco-node-internals.h"
-#include "rosco-services/Rosco/GetLoggers.h"
-#include "rosco-services/Rosco/SetLogLevel.h"
+#include "rosco-services/rosco/GetLoggers.h"
+#include "rosco-services/rosco/SetLogLevel.h"
 
 typedef enum {
   ROSCO_NODE_REGISTRATION_INIT,

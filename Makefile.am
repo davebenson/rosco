@@ -1,6 +1,8 @@
 
-lib_LIBRARIES = librosco.a
-librosco_a_SOURCES =  \
+# Files which are used BY the code-generator, but do NOT use the
+# code generator, hence can be made into a helper library
+# for bootstrapping.
+rosco_bootstrap_c_files = \
 src/dsk/dsk-base64-encoder.c \
 src/dsk/dsk-http-server-stream.c \
 src/dsk/dsk-date.c \
@@ -112,6 +114,15 @@ src/dsk/dsk-byte-undoubler.c \
 src/dsk/dsk-udp-socket.c \
 src/dsk/dsk-path.c \
 src/dsk/dsk-quote-printable.c \
-src/rosco-node.c \
 src/rosco-type-system.c \
 src/rosco-xmlrpc-client.c
+
+bin_PROGRAMS = rosco-codegen
+rosco_codegen_SOURCES = \
+$(rosco_bootstrap_c_files) \
+src/tools/rosco-codegen-main.c
+
+lib_LIBRARIES = librosco.a
+librosco_a_SOURCES =  \
+$(rosco_bootstrap_c_files) \
+src/rosco-node.c

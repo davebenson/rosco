@@ -1,6 +1,41 @@
 #include "rosco-type-system.h"
 #include <dsk/dsk.h>
 
+struct StrArray {
+  size_t n;
+  char **strs;
+};
+#define STR_ARRAY_INIT { 0,0,NULL }
+
+static void str_array_append_take (struct StrArray *arr, char *take)
+{
+  char **end = dsk_array_helper_append_n (&arr->n, (void **) &arr->strs,
+                                          sizeof(char *), 8, 1);
+  *end = take;
+}
+
+static void str_array_append (struct StrArray *arr, const char *str)
+{
+  char **end = dsk_array_helper_append_n (&arr->n, (void **) &arr->strs,
+                                          sizeof(char *), 8, 1);
+  *end = dsk_strdup (str);
+}
+
+static void add_strings_from_fp (struct StrArray *arr, FILE *fp)
+{
+  char buf[2048];
+  while (fgets (buf, sizeof (buf), fp) != NULL)
+    {
+      const char *end = strchr (buf, 0);
+      while (buf < end && dsk_ascii_isspace (*(end-1)))
+        end--;
+      *end = 0;
+      if (buf[0] == '#' || buf == end)
+        continue;
+      str_array_append (arr, buf);
+    }
+}
+
 static const char short_desc[] = 
     "Generate Message and Services for use with ROSCO"
 ;
@@ -9,13 +44,25 @@ static const char long_desc[] =
   "and generate .h and .c files.\n\n"
 ;
 
-static size_t n_source_dirs = 0;
-static char **source_dirs = NULL;
-static DSK_CMDLINE_CALLBACK_DECLARE(add_source_dir)
+static struct StrArray source_dirs = STR_ARRAY_INIT;
+static struct StrArray message_type_names = STR_ARRAY_INIT;
+static struct StrArray service_type_names = STR_ARRAY_INIT;
+static DSK_CMDLINE_CALLBACK_DECLARE(add_arg_value_or_list_from_file_to_str_array)
 {
-  source_dirs = dsk_realloc (source_dirs, sizeof (char *) * (n_source_dirs+1));
-  assert(source_dirs != NULL);
-  source_dirs[n_source_dirs++] = dsk_strdup (arg_value);
+  struct StrArray *arr = callback_data;
+  if (arg_value[0] == '@')
+    {
+      FILE *fp = fopen (arg_value + 1, "r");
+      if (fp == NULL)
+        {
+          dsk_set_error (error, "file open failed: %s", strerror (errno));
+          return DSK_FALSE;
+        }
+      add_strings_from_fp (arr, fp);
+      fclose (fp);
+    }
+  else
+    str_array_append (arr, arg_value);
   return TRUE;
 }
 
@@ -58,7 +105,13 @@ int main(int argc, char **argv)
 
   dsk_cmdline_add_func (
     "src-dir", "Directory which may include msg or srv directories", "DIR",
-    0, add_source_dir);
+    0, add_arg_value_or_list_from_file_to_str_array, &source_dirs);
+  dsk_cmdline_add_func (
+    "message", "Add a message type to generate",
+    0, add_arg_value_or_list_from_file_to_str_array, &message_type_names);
+  dsk_cmdline_add_func (
+    "service", "Add a service type to generate",
+    0, add_arg_value_or_list_from_file_to_str_array, &service_type_names);
 
   dsk_cmdline_process_args (&argc, &argv);
 
@@ -68,6 +121,54 @@ int main(int argc, char **argv)
     dest_h = dsk_strdup_printf ("%s/include", common_dest_dir);
   }
 
+  //TODO: check all message-types and service-types exist before beginning codegen
+  RoscoMessageType **message_types = DSK_NEW_ARRAY (message_type_names.n, RoscoMessageType *);
+  RoscoServiceType **service_types = DSK_NEW_ARRAY (service_type_names.n, RoscoServiceType *);
   RoscoTypeContext *ctx = rosco_type_context_new (n_source_dirs, (char**) source_dirs);
+  for (size_t i = 0; i < message_type_names.n; i++)
+    {
+      DskError *error = NULL;
+      RoscoType *t = rosco_type_context_get (ctx, message_type_names.strs[i], &error);
+      if (t == NULL)
+        {
+          fprintf(stderr, "error parsing type for %s: %s\n",
+                  message_type_names.strs[i], error->message);
+          return 1;
+        }
+      if (t->type != ROSCO_BUILTIN_TYPE_MESSAGE)
+        {
+          fprintf(stderr, "error: type %s: not a message\n",
+                  message_type_names.strs[i]);
+          return 1;
+        }
+      message_types[i] = (RoscoMessageType *) t;
+    }
+  for (size_t i = 0; i < service_type_names.n; i++)
+    {
+      DskError *error = NULL;
+      RoscoType *t = rosco_type_context_get_service (ctx, service_type_names.strs[i], &error);
+      if (t == NULL)
+        {
+          fprintf(stderr, "error parsing service %s: %s\n",
+                  service_type_names.strs[i], error->message);
+          return 1;
+        }
+      service_types[i] = t;
+    }
+    
+  for (size_t i = 0; i < message_type_names.n; i++)
+    {
+      DskBuffer h_code = DSK_BUFFER_INIT;
+      DskBuffer c_code = DSK_BUFFER_INIT;
+      generate_message_type (message_types[i], &h_code, &c_code);
+      char *h_path = dsk_strdup_printf ("%s/%s.h", dest_h, message_type_names.strs[i]);
+      char *c_path = dsk_strdup_printf ("%s/%s.c", dest_c, message_type_names.strs[i]);
+      dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
+      dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
+      dsk_free (c_path);
+      dsk_free (h_path);
+    }
+  
+ 
   ...
 }

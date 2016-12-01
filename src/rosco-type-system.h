@@ -7,9 +7,12 @@ typedef struct RoscoMessage RoscoMessage;
 typedef struct RoscoArrayType RoscoArrayType;
 typedef struct RoscoArray RoscoArray;
 typedef struct RoscoMessageTypeField RoscoMessageTypeField;
+typedef struct RoscoServiceType RoscoServiceType;
 
 #include "dsk/dsk.h"
 #include <unistd.h>
+
+typedef uint8_t rosco_bool;
 
 typedef enum
 {
@@ -22,6 +25,9 @@ typedef enum
   ROSCO_BUILTIN_TYPE_UINT32,
   ROSCO_BUILTIN_TYPE_INT64,
   ROSCO_BUILTIN_TYPE_UINT64,
+  ROSCO_BUILTIN_TYPE_FLOAT32,
+  ROSCO_BUILTIN_TYPE_FLOAT64,
+  ROSCO_BUILTIN_TYPE_STRING,
   ROSCO_BUILTIN_TYPE_TIME,
   ROSCO_BUILTIN_TYPE_DURATION,
   ROSCO_BUILTIN_TYPE_MESSAGE,
@@ -93,6 +99,7 @@ struct RoscoMessage
 
 
 typedef struct RoscoTypeContextType RoscoTypeContextType;
+typedef struct RoscoTypeContextServiceType RoscoTypeContextServiceType;
 typedef struct RoscoTypeContext RoscoTypeContext;
 
 struct RoscoTypeContextType {
@@ -109,12 +116,12 @@ struct RoscoServiceType
 };
 
 struct RoscoTypeContextServiceType {
-  RoscoServiceType *type;
+  RoscoServiceType *service_type;
   RoscoTypeContextServiceType *left, *right, *parent;
   dsk_boolean is_red;
 };
 
-struct _RoscoTypeContext
+struct RoscoTypeContext
 {
   size_t n_dirs;
   char **dirs;

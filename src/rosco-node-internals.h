@@ -26,7 +26,7 @@ typedef struct {
       char *message;
       uint32_t code;
       DskXmlrpcValue *error_value;		// always a struct containing the other values
-    } faulted
+    } faulted;
   } info;
 } RoscoNodeExecuteResult;
  

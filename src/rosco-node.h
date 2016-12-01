@@ -93,6 +93,10 @@ void                rosco_service_client_call    (RoscoServiceClient   *service_
                                                   DskDestroyNotify      func_data_destroy);
 void                rosco_service_client_unregister (RoscoService         *service);
 
+#define ROSCO_NODE_THREAD_CONFIG_INIT {NULL}
+typedef struct RoscoNodeThreadConfig {
+  DskThreadPool *thread_pool;
+} RoscoNodeThreadConfig;
 
 typedef struct RoscoNodeServiceAdvertisement {
   RoscoServiceType     *service_type;
@@ -128,6 +132,7 @@ void                rosco_service_unregister    (RoscoService         *service);
   assert(rosco_node_is_current_thread (...))
 dsk_boolean rosco_node_is_current_thread (RoscoNode *node);
 
+typedef void (*RoscoCallback)(void *callback_data);
 void rosco_node_run_on_main_thread (RoscoNode *node, RoscoCallback callback, void *callback_data);
 
 #define ROSCO_NODE_SERVICE_ADVERTISEMENT_DECLARE_STATIC(c_name, ServiceTypeBaseName) \
