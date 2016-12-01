@@ -166,7 +166,7 @@ static RoscoTypeContextType *
 _rosco_type_context_get     (RoscoTypeContext *context,
                                 const char          *normalized_name,
                                 const char          *error_location,
-                                RoscoError         **error)
+                                DskError         **error)
 {
   RoscoTypeContextType *mctype;
 #define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->name)
@@ -231,7 +231,7 @@ _rosco_type_context_get     (RoscoTypeContext *context,
 RoscoType *
 rosco_type_context_get     (RoscoTypeContext *context,
                                const char          *name,
-                               RoscoError         **error)
+                               DskError         **error)
 {
   char *to_free = NULL;
   const char *nname = normalize_type_name (name, &to_free);
