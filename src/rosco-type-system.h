@@ -47,6 +47,7 @@ struct RoscoType {
   RoscoBuiltinType type;
   char *cname;
   char *name;
+  char *func_prefix_name;
   size_t sizeof_ctype;
   size_t alignof_ctype;
 
@@ -86,8 +87,7 @@ struct RoscoArray
 struct RoscoMessageTypeField
 {
   char *name;
-  RoscoType type;
-  void *descriptor;
+  RoscoType *type;
   size_t offset;
 };
 

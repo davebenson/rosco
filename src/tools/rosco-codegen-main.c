@@ -66,6 +66,49 @@ static DSK_CMDLINE_CALLBACK_DECLARE(add_arg_value_or_list_from_file_to_str_array
   return TRUE;
 }
 
+static void 
+generate_message_type (RoscoMessageType *type,
+                       DskBuffer        *ccode,
+                       DskBuffer        *hcode)
+{
+  dsk_buffer_printf (
+    &hcode,
+    "struct %s\n{\n  RoscoMessage base_instance;\n",
+    type->base.cname
+  );
+  unsigned i;
+  for (i = 0; i < type->n_fields; i++)
+    {
+      dsk_buffer_printf (
+        &ccode,
+        "  %s %s;\n",
+        type->fields[i].type->cname,
+        type->fields[i].name
+      );
+    }
+  dsk_buffer_append_string (&h_code, "};\n\n")
+  
+  dsk_buffer_printf (&h_code,
+    "void\n"
+    "%s_serialize   (const %s *value,\n"
+    "%*s              DskBuffer *target);\n"
+    "dsk_boolean\n"
+    "%s_deserialize (DskBuffer *buffer,\n"
+    "%*s              %s *out);\n",
+    type->base.func_prefix_name,
+    type->base.cname,
+    (int) strlen (type->base.func_prefix_name), "",
+    type->base.func_prefix_name,
+    (int) strlen (type->base.func_prefix_name), "",
+    type->base.cname);
+
+  // C File:  define RoscoMessageType
+  ... 
+
+  // C File:  implement serialize/deserialize
+  ... 
+}
+
 int main(int argc, char **argv)
 {
   dsk_boolean all = DSK_FALSE;
@@ -167,8 +210,12 @@ int main(int argc, char **argv)
       dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_free (c_path);
       dsk_free (h_path);
+
     }
   
+  RoscoType base;
+  unsigned n_fields;
+  RoscoMessageTypeField *fields;
  
   ...
 }
