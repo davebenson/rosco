@@ -1069,12 +1069,13 @@ retry_write:
         {
           /* should be give a warning or something?
              i have no idea what error we might get */
-          const char message1[] = "unexpected error doing signal notification (";
-          const char message2[] = ")\n";
-          const char *se = strerror (errno);
-          write (STDERR_FILENO, message1, sizeof (message1)-1);
-          write (STDERR_FILENO, se, strlen (se));
-          write (STDERR_FILENO, message2, sizeof (message2)-1);
+          char msg[256];
+          snprintf(msg, sizeof(msg), "unexpected error doing signal notification (%s)\n", strerror (errno));
+          unsigned msg_len = strlen (msg);
+          if (write (STDERR_FILENO, msg, msg_len) != msg_len)
+            { 
+              // not clear what we can do at this point.
+            }
         }
     }
 }

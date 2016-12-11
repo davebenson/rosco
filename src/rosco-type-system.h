@@ -9,10 +9,22 @@ typedef struct RoscoArray RoscoArray;
 typedef struct RoscoMessageTypeField RoscoMessageTypeField;
 typedef struct RoscoServiceType RoscoServiceType;
 
+// private
+typedef struct RoscoTypeContextRecGuard RoscoTypeContextRecGuard;
+
 #include "dsk/dsk.h"
 #include <unistd.h>
 
 typedef uint8_t rosco_bool;
+typedef struct RoscoTime
+{
+  uint32_t secs, nsecs;
+} RoscoTime;
+typedef struct RoscoDuration
+{
+  int32_t secs, nsecs;
+} RoscoDuration;
+
 
 typedef enum
 {
@@ -127,6 +139,7 @@ struct RoscoTypeContext
   char **dirs;
   RoscoTypeContextType *types_by_name;
   RoscoTypeContextServiceType *services_by_name;
+  RoscoTypeContextRecGuard *recursion_guards;
 };
 
 RoscoTypeContext    *rosco_type_context_new     (unsigned             n_message_dirs,
