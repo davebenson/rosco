@@ -82,6 +82,7 @@ struct RoscoMessageType {
   RoscoType base;
   unsigned n_fields;
   RoscoMessageTypeField *fields;
+  size_t sizeof_message;
 };
 
 struct RoscoArrayType {

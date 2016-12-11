@@ -524,6 +524,34 @@ _rosco_type_get_array_type         (RoscoType *type, ssize_t length)
     }
 }
 
+static dsk_boolean
+parse_message_fields_from_string (size_t text_size, const uint8_t *text,
+                                  const char *filename, unsigned start_line,
+                                  size_t *n_fields_out, 
+                                  RoscoMessageTypeField **fields_out,
+                                  size_t *sizeof_message_out,
+                                  DskError **error)
+{
+  ...
+}
+
+static dsk_boolean
+message_serialize              (RoscoType *type,
+		                const void *ptr_value,
+		                DskBuffer *out,
+		                DskError **error)
+{
+  ...
+}
+static dsk_boolean
+message_deserialize (RoscoType   *type,
+		     DskBuffer   *in,
+		     void        *ptr_value_out,
+		     DskError   **error)
+{
+  ...
+}
+
 static RoscoTypeContextType *
 _rosco_type_context_get        (RoscoTypeContext    *context,
                                 const char          *normalized_name,
@@ -570,8 +598,49 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
   /* Handle base_type */
   if (mctype == NULL)
     {
-      ... search path
-      ... read file, pass to message parser
+      for (unsigned i = 0; i < context->n_dirs; i++)
+        {
+          char *filename = dsk_strdup_printf ("%s/%s", context->dirs[i], base_type);
+          size_t content_size;
+          // read file, pass to message parser
+          uint8_t *contents = dsk_file_get_contents (filename, &content_size, NULL);
+          if (contents != NULL)
+            {
+              size_t n_fields;
+              RoscoMessageTypeField *fields;
+              size_t sizeof_message;
+              if (!parse_message_fields_from_string (content_size, contents,
+                                                     filename, 1,
+                                                     &n_fields, &fields,
+                                                     &sizeof_message,
+                                                     error))
+                { 
+                  dsk_free (contents);
+                  dsk_free (filename);
+                  goto cleanup_and_return_mctype;
+                }
+
+              RoscoMessageType *mt = DSK_NEW0 (RoscoMessageType);
+              mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
+              mt->base.cname = 
+              mt->base.name = dsk_strdup (name);
+              mt->base.func_prefix_name = 
+              mt->base.sizeof_ctype = sizeof (RoscoMessage *);
+              mt->base.alignof_ctype = alignof (RoscoMessage *);
+              mt->base.serialize = message_serialize;
+              mt->base.deserialize = message_deserialize;
+              mt->n_fields = n_fields;
+              mt->fields = fields;
+              mt->sizeof_message = sizeof_message;
+              mctype = (RoscoType *) mt;
+            }
+          dsk_free (filename);
+        }
+      if (mctype == NULL)
+        {
+          dsk_set_error (error, "type %s not found", base_type);
+          goto cleanup_and_return_mctype;
+        }
     }
   dsk_assert (mctype != NULL);
 
@@ -630,10 +699,30 @@ rosco_type_context_get     (RoscoTypeContext *context,
   return type == NULL ? NULL : type->type;
 }
 
+static void
+free_type_node_recursive (RoscoTypeContextType *type)
+{
+  if (type == NULL)
+    return;
+  free_type_node_recursive (type->left);
+  free_type_node_recursive (type->right);
+  
+  if (!type->type->is_static)
+    switch (type->type->type)
+      {
+	case ROSCO_BUILTIN_TYPE_MESSAGE:
+	  dsk_free (type->name);
+	  dsk_free (type->cname);
+	  dsk_free (type->name);
+      }
+  dsk_free (type);
+}
+
 void
 rosco_type_context_destroy (RoscoTypeContext *context)
 {
   dsk_assert (context->recursion_guards == NULL);
-  ...
+  free_type_node_recursive (context->types_by_name);
+  free_service_node_recursive (context->services_by_name);
+  dsk_free (context);
 }
-
