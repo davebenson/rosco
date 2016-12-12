@@ -409,7 +409,7 @@ void dsk_cmdline_mutually_exclusive_v (dsk_boolean     one_required,
                                        unsigned        n_excl,
                                        char          **excl)
 {
-  DskCmdlineArg **args = DSK_NEW_ARRAY (DskCmdlineArg*, n_excl);
+  DskCmdlineArg **args = DSK_NEW_ARRAY (n_excl, DskCmdlineArg*);
   ExclNode *node = DSK_NEW (ExclNode);
   unsigned i;
   node->args = args;

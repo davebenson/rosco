@@ -1128,7 +1128,7 @@ make_websocket_request (DskHttpRequestOptions *ropts,
   uint32_t key3_array[2];
   if (old_misc == NULL)
     old_misc = (DskHttpHeaderMisc*) ropts->unparsed_headers;
-  misc = DSK_NEW_ARRAY (DskHttpHeaderMisc, old_n + 4);
+  misc = DSK_NEW_ARRAY (old_n + 4, DskHttpHeaderMisc);
   memcpy (misc, old_misc, old_n * sizeof (DskHttpHeaderMisc));
   misc[old_n].key = "Upgrade";
   misc[old_n].value = "Websocket";

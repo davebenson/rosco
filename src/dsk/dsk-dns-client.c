@@ -305,7 +305,7 @@ handle_message (DskDnsMessage *message)
       else
         {
           /* positive result (an actual address) */
-          DskIpAddress *addrs = DSK_NEW_ARRAY (DskIpAddress, n_matches);
+          DskIpAddress *addrs = DSK_NEW_ARRAY (n_matches, DskIpAddress);
           unsigned ai = 0;
           entry->type = DSK_DNS_CACHE_ENTRY_ADDR;
           entry->info.addr.n = n_matches;

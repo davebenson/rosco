@@ -61,7 +61,7 @@ static DskNetworkInterfaceList *
 make_interface_list (void)
 {
   unsigned ifreq_alloced = 16;
-  struct ifreq *ifreq_array = DSK_NEW_ARRAY (struct ifreq, ifreq_alloced);
+  struct ifreq *ifreq_array = DSK_NEW_ARRAY (ifreq_alloced, struct ifreq);
   unsigned n_ifreq;
   DskNetworkInterface *rv;
   int tmp_socket;
@@ -101,7 +101,7 @@ make_interface_list (void)
   dsk_warning ("n_ifreq=%u",n_ifreq);
 
   /* now query each of those interfaces. */
-  rv = DSK_NEW_ARRAY (DskNetworkInterface, n_ifreq);
+  rv = DSK_NEW_ARRAY (n_ifreq, DskNetworkInterface);
   unsigned n_interfaces = 0;
   for (i = 0; i < n_ifreq; i++)
     {

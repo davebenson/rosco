@@ -17,6 +17,9 @@ typedef int dsk_boolean;
 #define DSK_MIN(a,b)            (((a) < (b)) ? (a) : (b))
 #define DSK_MAX(a,b)            (((a) > (b)) ? (a) : (b))
 
+#define DSK_MIN3(a,b,c)         (((a) < (b)) ? DSK_MIN(a,c) : DSK_MIN(b,c))
+#define DSK_MAX3(a,b,c)         (((a) > (b)) ? DSK_MAX(a,c) : DSK_MAX(b,c))
+
 /* branch-hinting macros */
 #define DSK_LIKELY(condition)     (condition)
 #define DSK_UNLIKELY(condition)   (condition)
@@ -30,8 +33,8 @@ typedef int dsk_boolean;
 /* typed-memory allocation macros */
 #define DSK_NEW(type)             ((type*) dsk_malloc (sizeof(type)))
 #define DSK_NEW0(type)            ((type*) dsk_malloc0 (sizeof(type)))
-#define DSK_NEW_ARRAY(type, n)    ((type*) dsk_malloc (sizeof(type) * (n)))
-#define DSK_NEW0_ARRAY(type, n)   ((type*) dsk_malloc0 (sizeof(type) * (n)))
+#define DSK_NEW_ARRAY(n, type)    ((type*) dsk_malloc (sizeof(type) * (n)))
+#define DSK_NEW0_ARRAY(n, type)   ((type*) dsk_malloc0 (sizeof(type) * (n)))
 #define DSK_RENEW(type, array, n) ((type*) dsk_realloc ((array), sizeof(type) * (n)))
 
 #ifndef DSK_DEBUG

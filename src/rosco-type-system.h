@@ -71,6 +71,8 @@ struct RoscoType {
                             DskBuffer *in,
                             void        *ptr_value_out,
                             DskError **error);
+  void (*destruct) (RoscoType *type,
+                    void      *ptr_value);
 
   // derived types
   RoscoArrayType *vararray_type;
@@ -147,6 +149,7 @@ RoscoTypeContext    *rosco_type_context_new     (unsigned             n_message_
                                                  char               **message_dirs);
 RoscoType           *rosco_type_context_get     (RoscoTypeContext    *context,
                                                  const char          *name,
+                                                 ssize_t              opt_name_len,
                                                  DskError           **error);
 RoscoServiceType    *rosco_type_context_get_service(RoscoTypeContext    *context,
                                                  const char          *name,
