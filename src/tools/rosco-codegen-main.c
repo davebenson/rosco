@@ -1,24 +1,22 @@
-#include "rosco-type-system.h"
-#include <dsk/dsk.h>
+#include "../rosco-type-system.h"
+#include "../dsk/dsk.h"
+#include "../dsk/dsk-contained-array-macros.h"
+#include <stdio.h>
+#include <string.h>
 
 struct StrArray {
-  size_t n;
-  char **strs;
+  DSK_CONTAINED_ARRAY_DECLARE (strs, char *);
 };
-#define STR_ARRAY_INIT { 0,0,NULL }
+#define STR_ARRAY_INIT { DSK_CONTAINED_ARRAY_INITIALIZER (16) }
 
 static void str_array_append_take (struct StrArray *arr, char *take)
 {
-  char **end = dsk_array_helper_append_n (&arr->n, (void **) &arr->strs,
-                                          sizeof(char *), 8, 1);
-  *end = take;
+  DSK_CONTAINED_ARRAY_APPEND (arr->strs, take);
 }
 
 static void str_array_append (struct StrArray *arr, const char *str)
 {
-  char **end = dsk_array_helper_append_n (&arr->n, (void **) &arr->strs,
-                                          sizeof(char *), 8, 1);
-  *end = dsk_strdup (str);
+  DSK_CONTAINED_ARRAY_APPEND (arr->strs, dsk_strdup (str));
 }
 
 static void add_strings_from_fp (struct StrArray *arr, FILE *fp)
@@ -26,7 +24,7 @@ static void add_strings_from_fp (struct StrArray *arr, FILE *fp)
   char buf[2048];
   while (fgets (buf, sizeof (buf), fp) != NULL)
     {
-      const char *end = strchr (buf, 0);
+      char *end = strchr (buf, 0);
       while (buf < end && dsk_ascii_isspace (*(end-1)))
         end--;
       *end = 0;
@@ -63,7 +61,7 @@ static DSK_CMDLINE_CALLBACK_DECLARE(add_arg_value_or_list_from_file_to_str_array
     }
   else
     str_array_append (arr, arg_value);
-  return TRUE;
+  return DSK_TRUE;
 }
 
 static void 
@@ -72,7 +70,7 @@ generate_message_type (RoscoMessageType *type,
                        DskBuffer        *hcode)
 {
   dsk_buffer_printf (
-    &hcode,
+    hcode,
     "struct %s\n{\n  RoscoMessage base_instance;\n",
     type->base.cname
   );
@@ -80,15 +78,15 @@ generate_message_type (RoscoMessageType *type,
   for (i = 0; i < type->n_fields; i++)
     {
       dsk_buffer_printf (
-        &ccode,
+        ccode,
         "  %s %s;\n",
         type->fields[i].type->cname,
         type->fields[i].name
       );
     }
-  dsk_buffer_append_string (&h_code, "};\n\n")
+  dsk_buffer_append_string (hcode, "};\n\n");
   
-  dsk_buffer_printf (&h_code,
+  dsk_buffer_printf (hcode,
     "void\n"
     "%s_serialize   (const %s *value,\n"
     "%*s              DskBuffer *target);\n"

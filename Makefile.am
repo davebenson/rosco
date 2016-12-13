@@ -114,15 +114,18 @@ src/dsk/dsk-byte-undoubler.c \
 src/dsk/dsk-udp-socket.c \
 src/dsk/dsk-path.c \
 src/dsk/dsk-quote-printable.c \
-src/rosco-type-system.c \
-src/rosco-xmlrpc-client.c
+src/rosco-type-system.c
 
 bin_PROGRAMS = rosco-codegen
 rosco_codegen_SOURCES = \
 $(rosco_bootstrap_c_files) \
 src/tools/rosco-codegen-main.c
 
+rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/%.srv rosco-codegen
+	./rosco-codegen -Isrv $*
+
 lib_LIBRARIES = librosco.a
 librosco_a_SOURCES =  \
 $(rosco_bootstrap_c_files) \
+rosco-services/rosco/GetLoggers.c \
 src/rosco-node.c

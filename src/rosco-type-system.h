@@ -57,6 +57,7 @@ typedef dsk_boolean (*RoscoTypeDeserializeFunc) (RoscoType         *type,
 
 struct RoscoType {
   RoscoBuiltinType type;
+  dsk_boolean is_static;
   char *cname;
   char *name;
   char *func_prefix_name;
@@ -125,6 +126,7 @@ struct RoscoTypeContextType {
 
 struct RoscoServiceType
 {
+  dsk_boolean is_static;
   char *name;
   RoscoMessageType *input;
   RoscoMessageType *output;

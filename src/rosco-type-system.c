@@ -40,6 +40,7 @@ struct RoscoTypeContextRecGuard {
 #define DEFINE_ROSCO_TYPE(BUILTIN_BASE, c_type, name, func_prefix) \
 {                                                     \
   ROSCO_BUILTIN_TYPE_##BUILTIN_BASE,                  \
+  DSK_TRUE,		/* is_static */               \
   #c_type,                                            \
   #name,                                              \
   #func_prefix,                                       \
@@ -696,32 +697,95 @@ message_deserialize (RoscoType   *type,
 static char *
 message_name_to_cname (const char *name)
 {
-  ...
+  size_t rv_len = 0;
+  for (const char *at = name; *at; at++)
+    if (*at == '/')
+      rv_len += 2;
+    else
+      rv_len += 1;
+  char *rv = dsk_malloc (rv_len + 1);	/* +1 for terminal NUL */
+  char *rv_at = rv;
+  const char *at = name;
+  const char *ns_end = strrchr (name, '/');
+  if (ns_end)
+    ns_end++;
+  else
+    ns_end = name;
+  while (at < ns_end)
+    {
+      if (*at == '/')
+        {
+          *rv_at++ = '_';
+          *rv_at++ = '_';
+        }
+      else
+	*rv_at++ = *at;
+      at++;
+    }
+  strcpy (rv_at, at);
+  return rv;
 }
 
-static RoscoTypeContextType *
+static char *
+message_name_to_func_prefix (const char *name)
+{
+  size_t rv_len = 0;
+  const char *ns_end = strrchr (name, '/');
+  if (ns_end)
+    ns_end++;
+  else
+    ns_end = name;
+  for (const char *at = name; at < ns_end; at++)
+    if (*at == '/')
+      rv_len += 2;
+    else
+      rv_len += 1;
+  for (const char *at = ns_end; *at; at++)
+    if (dsk_ascii_isupper (*at))
+      rv_len += 2;
+    else 
+      rv_len += 1;
+  char *rv = dsk_malloc (rv_len + 1);	/* +1 for terminal NUL */
+  char *rv_at = rv;
+  const char *at = name;
+  while (at < ns_end)
+    {
+      if (*at == '/')
+        {
+          *rv_at++ = '_';
+          *rv_at++ = '_';
+        }
+      else
+	*rv_at++ = *at;
+      at++;
+    }
+  strcpy (rv_at, at);
+  return rv;
+}
+
+static RoscoType *
 _rosco_type_context_get        (RoscoTypeContext    *context,
                                 const char          *normalized_name,
-                                const char          *error_location,
                                 DskError            **error)
 {
   char *base_type_free = NULL;
   RoscoTypeContextType *mctype;
   dsk_boolean added_rec_guard = DSK_FALSE;
+  RoscoType *rv = NULL;
 #define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->type->name)
   DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, mctype);
   if (mctype != NULL)
-    return mctype;
+    return mctype->type;
   
-  const char *end = strchr (normalized_name, '[');
+  const char *left_bracket = strchr (normalized_name, '[');
   const char *base_type;
-  if (end == NULL)
+  if (left_bracket == NULL)
     {
       base_type = normalized_name;
     }
   else
     {
-      base_type_free = dsk_strcut (normalized_name, end);
+      base_type_free = dsk_strcut (normalized_name, left_bracket);
       base_type = base_type_free;
 
       DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), base_type, COMPARE_NORMALIZED_NAME, mctype);
@@ -733,7 +797,7 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
   if (guard != NULL)
     {
       dsk_set_error (error, "recursion encountered parsing type %s", base_type);
-      goto cleanup_and_return_mctype;
+      goto cleanup_and_return_rv;
     }
   RoscoTypeContextRecGuard guard_instance;
   guard = &guard_instance;
@@ -765,14 +829,14 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
                 { 
                   dsk_free (contents);
                   dsk_free (filename);
-                  goto cleanup_and_return_mctype;
+                  goto cleanup_and_return_rv;
                 }
 
               RoscoMessageType *mt = DSK_NEW0 (RoscoMessageType);
               mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-              mt->base.cname = message_name_to_cname (name);
-              mt->base.name = dsk_strdup (name);
-              mt->base.func_prefix_name = 
+              mt->base.cname = message_name_to_cname (normalized_name);
+              mt->base.name = dsk_strdup (normalized_name);
+              mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
               mt->base.sizeof_ctype = sizeof (RoscoMessage *);
               mt->base.alignof_ctype = alignof (RoscoMessage *);
               mt->base.serialize = message_serialize;
@@ -780,17 +844,20 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
               mt->n_fields = n_fields;
               mt->fields = fields;
               mt->sizeof_message = sizeof_message;
-              mctype = (RoscoType *) mt;
+              rv = (RoscoType *) mt;
+
+              type_context_register_type (context, rv);
             }
           dsk_free (filename);
         }
       if (mctype == NULL)
         {
           dsk_set_error (error, "type %s not found", base_type);
-          goto cleanup_and_return_mctype;
+          goto cleanup_and_return_rv;
         }
     }
   dsk_assert (mctype != NULL);
+  rv = mctype->type;
 
   // handle array subscripts
   while (left_bracket != NULL)
@@ -805,33 +872,60 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
           if (right_bracket == endnum)
             {
               dsk_set_error (error, "error parsing array type: bad number '%.5s...'", right_bracket);
-              goto cleanup_and_return_mctype;
+              goto cleanup_and_return_rv;
             }
           right_bracket = endnum;
         }
       if (*right_bracket == 0)
         {
 	  dsk_set_error (error, "missing ']'");
-	  goto cleanup_and_return_mctype;
+	  goto cleanup_and_return_rv;
         }
       if (*right_bracket != ']')
 	{
 	  dsk_set_error (error, "unexpected character '%s' when expecting ']'", dsk_ascii_byte_name (*right_bracket));
-	  goto cleanup_and_return_mctype;
+	  goto cleanup_and_return_rv;
 	}
        
       // make array type (or retrieve existing one)
-      mctype = _rosco_type_get_array_type (mctype, size);
+      rv = _rosco_type_get_array_type (rv, size);
 
       // update left_bracket
       left_bracket = right_bracket + 1;
     }
 
-cleanup_and_return_mctype:
+cleanup_and_return_rv:
   dsk_free (base_type_free);
   if (added_rec_guard)
-    DSK_RBTREE_REMOVE (GET_RECURSION_GUARD_TREE (context), rec_guard);
-  return mctype;
+    DSK_RBTREE_REMOVE (GET_RECURSION_GUARD_TREE (context), guard);
+  return rv;
+}
+
+// TODO: this fct should probably guard against
+//       bad characters (eg "/../" in message names,
+//       for security reasons.
+static const char *normalize_type_name (const char *name, ssize_t len, char **free_out)
+{
+  if (len < 0)
+    {
+      if (strchr (name, ' ') == NULL)
+        return name;
+      len = strlen (name);
+    }
+  char *rv = dsk_malloc (len + 1);
+  char *rv_at = rv;
+  const char *name_at = name;
+  unsigned rem = len;
+  while (rem > 0)
+    {
+      if (*name_at != ' ')
+        *rv_at++ = *name_at;
+      name_at++;
+      rem--;
+    }
+  *rv_at = 0;
+  *free_out = rv;
+  return rv;
 }
 
 RoscoType *
@@ -842,29 +936,65 @@ rosco_type_context_get     (RoscoTypeContext *context,
 {
   char *to_free = NULL;
   const char *nname = normalize_type_name (name, opt_name_len, &to_free);
-  RoscoTypeContextType *type = _rosco_type_context_get (context, nname, error);
-  if (to_free != NULL)
-    dsk_free (to_free);
-  return type == NULL ? NULL : type->type;
+  RoscoType *type = _rosco_type_context_get (context, nname, error);
+  dsk_free (to_free);
+  return type;
 }
 
 static void
-free_type_node_recursive (RoscoTypeContextType *type)
+free_type_and_array_types (RoscoType *type)
 {
-  if (type == NULL)
+  if (type->is_static)
     return;
-  free_type_node_recursive (type->left);
-  free_type_node_recursive (type->right);
-  
-  if (!type->type->is_static)
-    switch (type->type->type)
-      {
-	case ROSCO_BUILTIN_TYPE_MESSAGE:
-	  dsk_free (type->name);
-	  dsk_free (type->cname);
-	  dsk_free (type->name);
-      }
+  switch (type->type)
+    {
+      case ROSCO_BUILTIN_TYPE_MESSAGE:
+	dsk_free (type->name);
+	dsk_free (type->cname);
+	dsk_free (type->func_prefix_name);
+	break;
+    }
+  free_type_and_array_types ((RoscoType *) type->vararray_type);
+  for (unsigned i = 0; i < type->n_fixed_array_types; i++)
+    free_type_and_array_types ((RoscoType *) type->fixed_array_types[i]);
+  dsk_free (type->fixed_array_types);
   dsk_free (type);
+}
+
+static void
+free_type_node_recursive (RoscoTypeContextType *context_type)
+{
+  if (context_type == NULL)
+    return;
+
+  free_type_node_recursive (context_type->left);
+  free_type_node_recursive (context_type->right);
+  free_type_and_array_types (context_type->type);
+  dsk_free (context_type);
+}
+
+static void
+free_service_type (RoscoServiceType *stype)
+{
+  if (stype->is_static)
+    return;
+  free_type_node_recursive ((RoscoType *) stype->input);
+  free_type_node_recursive ((RoscoType *) stype->output);
+  dsk_free (stype->name);
+  dsk_free (stype);
+}
+
+static void
+free_service_node_recursive (RoscoTypeContextServiceType *service_type)
+{
+  if (service_type == NULL)
+    return;
+
+  free_service_node_recursive (service_type->left);
+  free_service_node_recursive (service_type->right);
+
+  free_service_type (service_type->service_type);
+  dsk_free (service_type);
 }
 
 void
