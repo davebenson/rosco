@@ -51,7 +51,6 @@ src/dsk/dsk-octet-connection.c \
 src/dsk/dsk-octet-listener-socket.c \
 src/dsk/dsk-url-decoder.c \
 src/dsk/dsk-base64.c \
-src/dsk/dsk-ssl-listener.c \
 src/dsk/dsk-url-encoder.c \
 src/dsk/dsk-dns-protocol.c \
 src/dsk/dsk-mem-pool.c \
@@ -71,7 +70,6 @@ src/dsk/dsk-dns-client.c \
 src/dsk/dsk-octet-fd.c \
 src/dsk/dsk-dir.c \
 src/dsk/dsk-json-prettier.c \
-src/dsk/dsk-https-server.c \
 src/dsk/dsk-octet-filter.c \
 src/dsk/dsk-zlib.c \
 src/dsk/dsk-common.c \
@@ -120,6 +118,8 @@ bin_PROGRAMS = rosco-codegen
 rosco_codegen_SOURCES = \
 $(rosco_bootstrap_c_files) \
 src/tools/rosco-codegen-main.c
+rosco_codegen_LDADD = \
+-lbz2 -lz
 
 rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/%.srv rosco-codegen
 	./rosco-codegen -Isrv $*

@@ -1282,14 +1282,10 @@ bind_info_destroyed (DskHttpServerBindInfo *bind_info)
 }
 
 static DskHttpServerBindInfo *
-do_bind (DskHttpServer *server,
-         const DskOctetListenerSocketOptions *options,
-         DskError **error)
+do_bind_listener (DskHttpServer *server,
+                  DskOctetListener *listener)
 {
-  DskOctetListener *listener = dsk_octet_listener_socket_new (options, error);
   DskHttpServerBindInfo *bind_info;
-  if (listener == NULL)
-    return NULL;
   bind_info = DSK_NEW (DskHttpServerBindInfo);
   bind_info->listener = listener;
   bind_info->server = server;
@@ -1305,6 +1301,17 @@ do_bind (DskHttpServer *server,
                  (DskHookDestroy) bind_info_destroyed);
 
   return bind_info;
+}
+
+static DskHttpServerBindInfo *
+do_bind (DskHttpServer *server,
+         const DskOctetListenerSocketOptions *options,
+         DskError **error)
+{
+  DskOctetListener *listener = dsk_octet_listener_socket_new (options, error);
+  if (listener == NULL)
+    return NULL;
+  return do_bind_listener (server, listener);
 }
 
 dsk_boolean dsk_http_server_bind_tcp           (DskHttpServer        *server,
@@ -1341,6 +1348,16 @@ dsk_boolean dsk_http_server_bind_local         (DskHttpServer        *server,
   bind_info->is_local = DSK_TRUE;
   bind_info->bind_local_path = dsk_strdup (path);
   return DSK_TRUE;
+}
+
+void        dsk_http_server_bind               (DskHttpServer        *server,
+                                                DskOctetListener     *listener)
+{
+  DskHttpServerBindInfo *bind_info;
+  bind_info = do_bind_listener (server, listener);
+  bind_info->is_local = 0;
+  bind_info->bind_local_path = NULL;
+  bind_info->bind_port = 0;
 }
 
 

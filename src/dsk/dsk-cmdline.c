@@ -329,7 +329,7 @@ void dsk_cmdline_add_string  (const char     *option_name,
                               const char     *description,
 			      const char     *arg_description,
                               DskCmdlineFlags flags,
-                              char          **value_out)
+                              const char    **value_out)
 {
   DskCmdlineArg *arg = add_option (option_name);
   dsk_assert (description != NULL);

@@ -41,11 +41,13 @@ struct RoscoTypeContextRecGuard {
 {                                                     \
   ROSCO_BUILTIN_TYPE_##BUILTIN_BASE,                  \
   DSK_TRUE,		/* is_static */               \
+  DSK_FALSE,		/* pass_by_ref */             \
   #c_type,                                            \
   #name,                                              \
   #func_prefix,                                       \
   sizeof(c_type),                                     \
   alignof(c_type),                                    \
+  #c_type,                                            \
   rosco_type__serialize__##name,                      \
   rosco_type__deserialize__##name,                    \
   rosco_type__destruct__##name,                       \

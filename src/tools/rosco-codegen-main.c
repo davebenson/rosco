@@ -98,13 +98,55 @@ generate_message_type (RoscoMessageType *type,
     (int) strlen (type->base.func_prefix_name), "",
     type->base.func_prefix_name,
     (int) strlen (type->base.func_prefix_name), "",
-    type->base.cname);
+    type->base.cname
+  );
 
   // C File:  define RoscoMessageType
-  ... 
+  dsk_buffer_printf (ccode,
+    "static RoscoMessageTypeField %s__fields[%u] = {\n",
+    type->base.func_prefix_name, type->n_fields
+  );
+  for (size_t i = 0; i < type->n_fields; i++)
+    {
+      dsk_buffer_printf (ccode,
+        "  { \"%s\", %s, offsetof(%s, %s) },\n",
+        type->fields[i].type->cname,
+        type->fields[i].name,
+        type->fields[i].type->cname,
+        type->fields[i].name
+      );
+    }
+  dsk_buffer_printf (ccode,
+    "};\n"
+  );
+  int func_prefix_len = strlen (type->base.func_prefix_name);
 
   // C File:  implement serialize/deserialize
-  ... 
+  dsk_buffer_printf (ccode,
+    "dsk_boolean\n"
+    "%s_serialize   (const %s *value,\n"
+    "%*s              DskBuffer *target,\n"
+    "%*s              DskError **error)\n"
+    "{\n",
+    type->base.func_prefix_name,
+    type->base.cname,
+    func_prefix_len, "",
+    func_prefix_len, "");
+  for (unsigned i = 0; i < type->n_fields; i++)
+    {
+      RoscoMessageTypeField *field = type->fields + i;
+      RoscoType *ftype = field->type;
+      dsk_buffer_printf (ccode,
+       "  if (!rosco_serialize__%s (%s(value->%s), target, error))\n"
+       "    {\n"
+       "      return DSK_FALSE;\n"
+       "    }\n",
+       ftype->func_prefix_name, ftype->pass_by_ref ? "&" : "",
+       field->name);
+    }
+  dsk_buffer_printf(ccode,
+    "return DSK_TRUE;\n"
+  );
 }
 
 int main(int argc, char **argv)
@@ -112,6 +154,9 @@ int main(int argc, char **argv)
   dsk_boolean all = DSK_FALSE;
   dsk_boolean all_messages = DSK_FALSE;
   dsk_boolean all_services = DSK_FALSE;
+  const char *common_dest_dir = NULL;
+  const char *h_dest_dir = NULL;
+  const char *c_dest_dir = NULL;
   dsk_cmdline_init (short_desc, long_desc, NULL, 0);
 
   dsk_cmdline_add_boolean (
@@ -148,72 +193,66 @@ int main(int argc, char **argv)
     "src-dir", "Directory which may include msg or srv directories", "DIR",
     0, add_arg_value_or_list_from_file_to_str_array, &source_dirs);
   dsk_cmdline_add_func (
-    "message", "Add a message type to generate",
+    "message", "Add a message type to generate", "TYPE",
     0, add_arg_value_or_list_from_file_to_str_array, &message_type_names);
   dsk_cmdline_add_func (
-    "service", "Add a service type to generate",
+    "service", "Add a service type to generate", "TYPE",
     0, add_arg_value_or_list_from_file_to_str_array, &service_type_names);
 
   dsk_cmdline_process_args (&argc, &argv);
 
   if (all) all_services = all_messages = DSK_TRUE;
   if (common_dest_dir) {
-    dest_c = dsk_strdup_printf ("%s/src", common_dest_dir);
-    dest_h = dsk_strdup_printf ("%s/include", common_dest_dir);
+    c_dest_dir = dsk_strdup_printf ("%s/src", common_dest_dir);
+    h_dest_dir = dsk_strdup_printf ("%s/include", common_dest_dir);
   }
 
   //TODO: check all message-types and service-types exist before beginning codegen
-  RoscoMessageType **message_types = DSK_NEW_ARRAY (message_type_names.n, RoscoMessageType *);
-  RoscoServiceType **service_types = DSK_NEW_ARRAY (service_type_names.n, RoscoServiceType *);
-  RoscoTypeContext *ctx = rosco_type_context_new (n_source_dirs, (char**) source_dirs);
-  for (size_t i = 0; i < message_type_names.n; i++)
+  RoscoMessageType **message_types = DSK_NEW_ARRAY (message_type_names.strs.length, RoscoMessageType *);
+  RoscoServiceType **service_types = DSK_NEW_ARRAY (service_type_names.strs.length, RoscoServiceType *);
+  RoscoTypeContext *ctx = rosco_type_context_new (source_dirs.strs.length, source_dirs.strs.data);
+  for (size_t i = 0; i < message_type_names.strs.length; i++)
     {
       DskError *error = NULL;
-      RoscoType *t = rosco_type_context_get (ctx, message_type_names.strs[i], &error);
+      RoscoType *t = rosco_type_context_get (ctx, message_type_names.strs.data[i], -1, &error);
       if (t == NULL)
         {
           fprintf(stderr, "error parsing type for %s: %s\n",
-                  message_type_names.strs[i], error->message);
+                  message_type_names.strs.data[i], error->message);
           return 1;
         }
       if (t->type != ROSCO_BUILTIN_TYPE_MESSAGE)
         {
           fprintf(stderr, "error: type %s: not a message\n",
-                  message_type_names.strs[i]);
+                  message_type_names.strs.data[i]);
           return 1;
         }
       message_types[i] = (RoscoMessageType *) t;
     }
-  for (size_t i = 0; i < service_type_names.n; i++)
+  for (size_t i = 0; i < service_type_names.strs.length; i++)
     {
       DskError *error = NULL;
-      RoscoType *t = rosco_type_context_get_service (ctx, service_type_names.strs[i], &error);
+      RoscoServiceType *t = rosco_type_context_get_service (ctx, service_type_names.strs.data[i], &error);
       if (t == NULL)
         {
           fprintf(stderr, "error parsing service %s: %s\n",
-                  service_type_names.strs[i], error->message);
+                  service_type_names.strs.data[i], error->message);
           return 1;
         }
       service_types[i] = t;
     }
     
-  for (size_t i = 0; i < message_type_names.n; i++)
+  for (size_t i = 0; i < message_type_names.strs.length; i++)
     {
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
       generate_message_type (message_types[i], &h_code, &c_code);
-      char *h_path = dsk_strdup_printf ("%s/%s.h", dest_h, message_type_names.strs[i]);
-      char *c_path = dsk_strdup_printf ("%s/%s.c", dest_c, message_type_names.strs[i]);
+      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, message_type_names.strs.data[i]);
+      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, message_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_free (c_path);
       dsk_free (h_path);
-
     }
-  
-  RoscoType base;
-  unsigned n_fields;
-  RoscoMessageTypeField *fields;
- 
-  ...
+  return 0;
 }

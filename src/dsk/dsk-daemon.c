@@ -11,12 +11,12 @@
 
 static const char *dsk_daemon_log_template = NULL;
 static unsigned    dsk_daemon_log_interval = 3600;
-static char       *dsk_daemon_pid_filename = NULL;
+static const char *dsk_daemon_pid_filename = NULL;
 static dsk_boolean dsk_daemon_watchdog     = DSK_FALSE;
 static dsk_boolean dsk_daemon_do_fork      = DSK_FALSE;
 static int         dsk_daemon_tzoffset     = 0;
 
-static char       *dsk_daemon_alert_script = 0;
+static const char *dsk_daemon_alert_script = 0;
 static unsigned    dsk_daemon_alert_interval = 3600;
 static unsigned    dsk_daemon_n_alerts_suppressed = 0;
 

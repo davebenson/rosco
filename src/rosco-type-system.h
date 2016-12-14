@@ -57,12 +57,17 @@ typedef dsk_boolean (*RoscoTypeDeserializeFunc) (RoscoType         *type,
 
 struct RoscoType {
   RoscoBuiltinType type;
-  dsk_boolean is_static;
+  unsigned is_static : 1;
+  unsigned pass_by_ref : 1;
   char *cname;
   char *name;
   char *func_prefix_name;
   size_t sizeof_ctype;
   size_t alignof_ctype;
+
+  // this is either "cname"         if !pass_by_ref
+  // or             "const cname *" if pass_by_ref
+  char *c_input_arg_type;
 
   dsk_boolean (*serialize)(RoscoType *type,
                           const void *ptr_value,
