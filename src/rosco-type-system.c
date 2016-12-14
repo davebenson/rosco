@@ -980,8 +980,8 @@ free_service_type (RoscoServiceType *stype)
 {
   if (stype->is_static)
     return;
-  free_type_node_recursive ((RoscoType *) stype->input);
-  free_type_node_recursive ((RoscoType *) stype->output);
+  free_type_and_array_types ((RoscoType *) stype->input);
+  free_type_and_array_types ((RoscoType *) stype->output);
   dsk_free (stype->name);
   dsk_free (stype);
 }

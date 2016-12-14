@@ -1,3 +1,4 @@
+CFLAGS = -std=c99
 
 # Files which are used BY the code-generator, but do NOT use the
 # code generator, hence can be made into a helper library

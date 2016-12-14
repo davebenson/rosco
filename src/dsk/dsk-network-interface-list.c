@@ -1,14 +1,17 @@
+/* needed under solaris */
+#define BSD_COMP
+
+/* needed under certain glibc versions */
+#define _BSD_SOURCE
+
 #include "dsk.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 
-/* needed under solaris */
-#define BSD_COMP
-
-#include <net/if.h>
 #include <sys/ioctl.h>
+#include <net/if.h>
 #include <errno.h>
 #include <netdb.h>
 #include <unistd.h>

@@ -1,6 +1,7 @@
 /* TODO: deprecate dsk-file-utils since these have equiv functionality if dir==NULL. */   
 /// 'cept tmpdir()
 
+#define _ATFILE_SOURCE
 #include <alloca.h>
 #include <sys/stat.h>
 #include <errno.h>
