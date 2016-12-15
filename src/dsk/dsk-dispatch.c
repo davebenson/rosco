@@ -9,6 +9,7 @@
 /* TODO:
  *  use DskMemPoolFixed instead of recycling lists
  */
+#define _POSIX_C_SOURCE  1
 #include <assert.h>
 #include <alloca.h>
 #include <sys/time.h>

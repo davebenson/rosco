@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <search.h>             /* for the seldom-used lfind() */
+#include <alloca.h>
 #include "dsk.h"
 #include "dsk-rbtree-macros.h"
 

@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <alloca.h>
 #include <stdlib.h>
 
 /* These headers are exclusively to call open(2)/fstat(2):

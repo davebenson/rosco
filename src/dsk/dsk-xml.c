@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <alloca.h>
 #include "dsk.h"
 
 DskXml *dsk_xml_ref   (DskXml *xml)

@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L		/* for S_ISSOCK */
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>

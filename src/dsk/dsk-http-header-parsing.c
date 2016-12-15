@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <alloca.h>
 #include "dsk.h"
 
 #define DEFAULT_INIT_N_MISC_HEADERS             8       /* must be power-of-two */

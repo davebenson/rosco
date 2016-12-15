@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <alloca.h>
 #include <stdio.h>
 #include "dsk-rbtree-macros.h"
 #include "dsk-common.h"
