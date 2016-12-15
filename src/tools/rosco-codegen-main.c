@@ -254,5 +254,17 @@ int main(int argc, char **argv)
       dsk_free (c_path);
       dsk_free (h_path);
     }
+  for (size_t i = 0; i < service_type_names.strs.length; i++)
+    {
+      DskBuffer h_code = DSK_BUFFER_INIT;
+      DskBuffer c_code = DSK_BUFFER_INIT;
+      generate_message_type (message_types[i], &h_code, &c_code);
+      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, message_type_names.strs.data[i]);
+      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, message_type_names.strs.data[i]);
+      dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
+      dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
+      dsk_free (c_path);
+      dsk_free (h_path);
+    }
   return 0;
 }

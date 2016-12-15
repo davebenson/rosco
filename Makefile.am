@@ -123,7 +123,7 @@ rosco_codegen_LDADD = \
 -lbz2 -lz
 
 rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/%.srv rosco-codegen
-	./rosco-codegen -Isrv $*
+	./rosco-codegen --src-dir=. --service=$*
 
 lib_LIBRARIES = librosco.a
 librosco_a_SOURCES =  \

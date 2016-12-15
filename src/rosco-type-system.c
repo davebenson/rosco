@@ -77,6 +77,7 @@ rosco_type__serialize__bool(RoscoType *type,
 		            DskBuffer *out,
 		            DskError **error)
 {
+  (void) type;
   uint8_t v = * (const uint8_t *) ptr_value;
   if (v > 1)
     {
@@ -92,6 +93,7 @@ rosco_type__deserialize__bool(RoscoType *type,
 			      void        *ptr_value_out,
 			      DskError **error)
 {
+  (void) type;
   DESERIALIZE_CHECK_MIN_SIZE("bool", in, 1, error);
   uint8_t v = dsk_buffer_read_byte (in);
   if (v > 1)
@@ -111,6 +113,8 @@ rosco_type__serialize__uint8(RoscoType *type,
 		             DskBuffer *out,
 		             DskError **error)
 {
+  (void) type;
+  (void) error;
   dsk_buffer_append_byte (out, * (const uint8_t *) ptr_value);
   return DSK_TRUE;
 }
@@ -120,6 +124,7 @@ rosco_type__deserialize__uint8(RoscoType *type,
 			       void        *ptr_value_out,
 			       DskError **error)
 {
+  (void) type;
   /* note: use type->name so that the same function works for signed int8 */
   DESERIALIZE_CHECK_MIN_SIZE(type->name, in, 1, error);
   * (uint8_t *) ptr_value_out = (uint8_t) dsk_buffer_read_byte (in);
@@ -139,6 +144,8 @@ rosco_type__serialize__uint16(RoscoType *type,
 		              DskBuffer *out,
 		              DskError **error)
 {
+  (void) type;
+  (void) error;
   uint16_t v = * (const uint16_t *) ptr_value;
   uint8_t data[2] = { v & 0xff, v >> 8 };   /* little-endian */
   dsk_buffer_append (out, 2, data);
@@ -170,6 +177,8 @@ rosco_type__serialize__uint32(RoscoType *type,
 		              DskBuffer *out,
 		              DskError **error)
 {
+  (void) type;
+  (void) error;
   uint32_t v = * (const uint32_t *) ptr_value;
   uint8_t data[4] = { UINT32_TO_UINT8LE_ARRAY (v) };
   dsk_buffer_append (out, 4, data);
@@ -205,6 +214,8 @@ rosco_type__serialize__uint64(RoscoType *type,
 		              DskBuffer *out,
 		              DskError **error)
 {
+  (void) type;
+  (void) error;
   uint64_t v = * (const uint64_t *) ptr_value;
   uint8_t data[8] = { v & 0xff, v >> 8, v >> 16, v >> 24,
                       v >> 32, v >> 40, v >> 48, v >> 54 };
@@ -254,6 +265,8 @@ rosco_type__serialize__string(RoscoType *type,
 		              DskBuffer *out,
 		              DskError **error)
 {
+  (void) type;
+  (void) error;
   const char *str = * (const char **) ptr_value;
   unsigned len = strlen (str);
   uint8_t len_enc[4] = {UINT32_TO_UINT8LE_ARRAY(len)};
@@ -282,6 +295,7 @@ rosco_type__deserialize__string(RoscoType *type,
   char *str = dsk_malloc (len + 1);
   dsk_buffer_read (in, len, str);
   str[len] = 0;
+  * (char **) ptr_value_out = str;
   return DSK_TRUE;
 }
 static void
@@ -298,6 +312,8 @@ rosco_type__serialize__time(RoscoType *type,
 		            DskBuffer *out,
 		            DskError **error)
 {
+  (void) type;
+  (void) error;
   RoscoTime time = * (const RoscoTime *) ptr_value;
   uint8_t enc[8] = {
     UINT32_TO_UINT8LE_ARRAY(time.secs),
@@ -312,6 +328,7 @@ rosco_type__deserialize__time(RoscoType *type,
 			        void        *ptr_value_out,
 			        DskError **error)
 {
+  (void) type;
   DESERIALIZE_CHECK_MIN_SIZE (type->name, in, 8, error);
   uint8_t tmp[8];
   dsk_buffer_read (in, 8, tmp);
@@ -343,6 +360,8 @@ rosco_type__serialize__duration(RoscoType *type,
 		                DskBuffer *out,
 		                DskError **error)
 {
+  (void) type;
+  (void) error;
   RoscoDuration duration = * (const RoscoDuration *) ptr_value;
   uint8_t enc[8] = {
     UINT32_TO_UINT8LE_ARRAY(duration.secs),
@@ -941,6 +960,14 @@ rosco_type_context_get     (RoscoTypeContext *context,
   RoscoType *type = _rosco_type_context_get (context, nname, error);
   dsk_free (to_free);
   return type;
+}
+
+RoscoServiceType *
+rosco_type_context_get_service(RoscoTypeContext    *context,
+			       const char          *name,
+			       DskError           **error)
+{
+  
 }
 
 static void
