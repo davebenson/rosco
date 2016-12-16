@@ -133,6 +133,7 @@ struct RoscoServiceType
 {
   dsk_boolean is_static;
   char *name;
+  char *cname;
   RoscoMessageType *input;
   RoscoMessageType *output;
 };

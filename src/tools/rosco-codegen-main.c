@@ -47,6 +47,7 @@ static struct StrArray message_type_names = STR_ARRAY_INIT;
 static struct StrArray service_type_names = STR_ARRAY_INIT;
 static DSK_CMDLINE_CALLBACK_DECLARE(add_arg_value_or_list_from_file_to_str_array)
 {
+  (void) arg_name;
   struct StrArray *arr = callback_data;
   if (arg_value[0] == '@')
     {
@@ -149,6 +150,18 @@ generate_message_type (RoscoMessageType *type,
   );
 }
 
+static void 
+generate_service_type (RoscoServiceType *type,
+                       DskBuffer        *ccode,
+                       DskBuffer        *hcode)
+{
+  generate_message_type (type->input, ccode, hcode);
+  generate_message_type (type->output, ccode, hcode);
+
+  ... name to cname ??
+  dsk_buffer_printf (hcode, "extern RoscoServiceType %s;\n", type->cname);
+}
+
 int main(int argc, char **argv)
 {
   dsk_boolean all = DSK_FALSE;
@@ -244,6 +257,7 @@ int main(int argc, char **argv)
     
   for (size_t i = 0; i < message_type_names.strs.length; i++)
     {
+dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
       generate_message_type (message_types[i], &h_code, &c_code);
@@ -256,9 +270,10 @@ int main(int argc, char **argv)
     }
   for (size_t i = 0; i < service_type_names.strs.length; i++)
     {
+dsk_warning("generating service %u: %s", (unsigned)i, service_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
-      generate_message_type (message_types[i], &h_code, &c_code);
+      generate_service_type (service_types[i], &h_code, &c_code);
       char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, message_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, message_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);

@@ -1,4 +1,4 @@
-CFLAGS = -std=c99
+CFLAGS = -std=c99 @CFLAGS@
 
 # Files which are used BY the code-generator, but do NOT use the
 # code generator, hence can be made into a helper library
@@ -122,8 +122,8 @@ src/tools/rosco-codegen-main.c
 rosco_codegen_LDADD = \
 -lbz2 -lz
 
-rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/%.srv rosco-codegen
-	./rosco-codegen --src-dir=. --service=$*
+rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/rosco/%.srv rosco-codegen
+	./rosco-codegen --src-dir=. --service=$* --dest=rosco-services
 
 lib_LIBRARIES = librosco.a
 librosco_a_SOURCES =  \

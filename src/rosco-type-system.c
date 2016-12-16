@@ -455,7 +455,7 @@ array_serialize                (RoscoType *type,
   if (arrtype->length >= 0)
     {
       // fixed-length array
-      dsk_assert (arr.count == arrtype->length);
+      dsk_assert (arr.count == (size_t) arrtype->length);
       // note: there's no header to serialize
     }
   else
@@ -589,7 +589,7 @@ parse_message_fields_from_string (RoscoTypeContext *context,
   const char *at = (const char *) text;
   const char *end = at + text_size;
   DSK_TMP_ARRAY_DECLARE (RoscoMessageTypeField, fields, 16);
-  unsigned lineno;
+  unsigned lineno = start_line;
   size_t cur_offset = sizeof (RoscoMessage);
   while (at < end)
     {
@@ -796,7 +796,10 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
 #define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->type->name)
   DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, mctype);
   if (mctype != NULL)
-    return mctype->type;
+    {
+      ...
+      return mctype->type;
+    }
   
   const char *left_bracket = strchr (normalized_name, '[');
   const char *base_type;
@@ -965,8 +968,23 @@ rosco_type_context_get     (RoscoTypeContext *context,
 RoscoServiceType *
 rosco_type_context_get_service(RoscoTypeContext    *context,
 			       const char          *name,
+                               ssize_t              opt_name_len,
 			       DskError           **error)
 {
+  char *to_free = NULL;
+  const char *normalized_name = normalize_type_name (name, opt_name_len, &to_free);
+
+  char *base_type_free = NULL;
+  RoscoTypeContextServiceType *typectx_stype = NULL;
+#define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->type->name)
+  DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, typectx_stype);
+  if (typectx_stype != NULL)
+    {
+      dsk_free (to_free);
+      return typectx_stype->type;
+    }
+  
+  ...
   
 }
 
