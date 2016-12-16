@@ -9,10 +9,12 @@ struct StrArray {
 };
 #define STR_ARRAY_INIT { DSK_CONTAINED_ARRAY_INITIALIZER (16) }
 
+#if 0
 static void str_array_append_take (struct StrArray *arr, char *take)
 {
   DSK_CONTAINED_ARRAY_APPEND (arr->strs, take);
 }
+#endif
 
 static void str_array_append (struct StrArray *arr, const char *str)
 {
@@ -158,8 +160,11 @@ generate_service_type (RoscoServiceType *type,
   generate_message_type (type->input, ccode, hcode);
   generate_message_type (type->output, ccode, hcode);
 
-  ... name to cname ??
   dsk_buffer_printf (hcode, "extern RoscoServiceType %s;\n", type->cname);
+  dsk_buffer_printf (ccode,
+    "extern RoscoServiceType %s;\n",
+     type->cname
+  );
 }
 
 int main(int argc, char **argv)
@@ -245,7 +250,7 @@ int main(int argc, char **argv)
   for (size_t i = 0; i < service_type_names.strs.length; i++)
     {
       DskError *error = NULL;
-      RoscoServiceType *t = rosco_type_context_get_service (ctx, service_type_names.strs.data[i], &error);
+      RoscoServiceType *t = rosco_type_context_get_service (ctx, service_type_names.strs.data[i], -1, &error);
       if (t == NULL)
         {
           fprintf(stderr, "error parsing service %s: %s\n",

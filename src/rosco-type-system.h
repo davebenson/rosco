@@ -161,6 +161,7 @@ RoscoType           *rosco_type_context_get     (RoscoTypeContext    *context,
                                                  DskError           **error);
 RoscoServiceType    *rosco_type_context_get_service(RoscoTypeContext    *context,
                                                  const char          *name,
+                                                 ssize_t              opt_name_len,
                                                  DskError           **error);
 void                 rosco_type_context_destroy (RoscoTypeContext    *context);
 

@@ -797,7 +797,7 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
   DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, mctype);
   if (mctype != NULL)
     {
-      ...
+      dsk_set_error (error, "type not found: %s", normalized_name);
       return mctype->type;
     }
   
@@ -835,7 +835,7 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
     {
       for (unsigned i = 0; i < context->n_dirs; i++)
         {
-          char *filename = dsk_strdup_printf ("%s/%s", context->dirs[i], base_type);
+          char *filename = dsk_strdup_printf ("%s/msg/%s.msg", context->dirs[i], base_type);
           size_t content_size;
           // read file, pass to message parser
           uint8_t *contents = dsk_file_get_contents (filename, &content_size, NULL);
@@ -965,6 +965,74 @@ rosco_type_context_get     (RoscoTypeContext *context,
   return type;
 }
 
+static size_t
+count_newlines (size_t len, const uint8_t *data)
+{
+  size_t rem = len;
+  size_t rv = 0;
+  while (rem--)
+    if (*data++ == (uint8_t) '\n')
+      rv++;
+  return rv;
+}
+
+static const uint8_t *
+find_minusminusminus_sep (size_t len, const uint8_t *contents, const uint8_t **sep_end_out)
+{
+  const uint8_t *at = contents;
+  const uint8_t *end = at + len;
+  while (at < end - 3)
+    {
+      if (*at++ == '\n')
+        {
+          /* skip leading whitespace;
+           * if this skips a newline it doesn't matter. */
+          while (at < end && dsk_ascii_isspace (*at))
+            at++;
+          if (at + 2 < end && at[0] == '-' && at[1] == '-' && at[2] == '-')
+            {
+              const uint8_t *sep_start = at;
+              at += 3;
+	      while (at < end && dsk_ascii_isspace (*at))
+                {
+		  if (*at == '\n')
+		    break;
+		  at++;
+                }
+              if (at == end)
+                {
+                  // we will treat a file ending with "--" (no newline)
+                  // as though it had a newline, ir an empty (0-field) response.
+                  *sep_end_out = end;
+                  return sep_start;
+                }
+              if (*at == '\n') 
+                {
+                  *sep_end_out = at + 1;
+                  return sep_start;
+                }
+              else
+                {
+                  dsk_warning ("in service file: unexpected character after --");
+                  return NULL;
+                }
+            }
+        }
+    }
+  return NULL;
+}
+
+static RoscoTypeContextServiceType *
+type_context_register_service (RoscoTypeContext *ctx, RoscoServiceType *type)
+{
+  RoscoTypeContextServiceType *node = DSK_NEW (RoscoTypeContextServiceType);
+  node->service_type = type;
+  RoscoTypeContextServiceType *conflict;
+  DSK_RBTREE_INSERT (GET_SERVICE_TREE (ctx), node, conflict);
+  assert(conflict == NULL);
+  return node;
+}
+
 RoscoServiceType *
 rosco_type_context_get_service(RoscoTypeContext    *context,
 			       const char          *name,
@@ -974,18 +1042,113 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
   char *to_free = NULL;
   const char *normalized_name = normalize_type_name (name, opt_name_len, &to_free);
 
-  char *base_type_free = NULL;
-  RoscoTypeContextServiceType *typectx_stype = NULL;
-#define COMPARE_NORMALIZED_NAME(nname, t, rv) rv = strcmp(nname, t->type->name)
-  DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, typectx_stype);
-  if (typectx_stype != NULL)
+  RoscoTypeContextServiceType *rv_stype = NULL;
+#define COMPARE_NORMALIZED_NAME_TO_SERVICE(nname, t, rv) rv = strcmp(nname, t->service_type->name)
+  DSK_RBTREE_LOOKUP_COMPARATOR (GET_SERVICE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME_TO_SERVICE, rv_stype);
+  if (rv_stype != NULL)
     {
       dsk_free (to_free);
-      return typectx_stype->type;
+      return rv_stype->service_type;
     }
   
-  ...
+  for (unsigned i = 0; i < context->n_dirs; i++)
+    {
+      char *filename = dsk_strdup_printf ("%s/srv/%s.srv", context->dirs[i], normalized_name);
+      size_t content_size;
+      // read file, pass to message parser
+      uint8_t *contents = dsk_file_get_contents (filename, &content_size, NULL);
+      if (contents != NULL)
+	{
+	  size_t n_input_fields;
+	  RoscoMessageTypeField *input_fields;
+	  size_t sizeof_input_message;
+	  size_t n_output_fields;
+	  RoscoMessageTypeField *output_fields;
+	  size_t sizeof_output_message;
+
+          const uint8_t *end_minusminusminus;
+          const uint8_t *minusminusminus = find_minusminusminus_sep (content_size, contents, &end_minusminusminus);
+          if (minusminusminus == NULL)
+            {
+              dsk_set_error (error, "missing --- in service definition file %s", filename);
+	      dsk_free (contents);
+	      dsk_free (filename);
+	      goto cleanup_and_return_rv;
+            }
+
+
+	  if (!parse_message_fields_from_string (context,
+						 minusminusminus-contents, contents,
+						 filename, 1,
+						 &n_input_fields, &input_fields,
+						 &sizeof_input_message,
+						 error))
+	    { 
+	      dsk_free (contents);
+	      dsk_free (filename);
+	      goto cleanup_and_return_rv;
+	    }
+          const uint8_t *content_end = contents + content_size;
+          const uint8_t *response_start = end_minusminusminus;
+          unsigned response_line_no = count_newlines (response_start - contents, contents);
+	  if (!parse_message_fields_from_string (context,
+                                                 content_end - response_start,
+						 response_start,
+						 filename, response_line_no,
+						 &n_output_fields, &output_fields,
+						 &sizeof_output_message,
+						 error))
+	    { 
+	      dsk_free (contents);
+	      dsk_free (filename);
+	      goto cleanup_and_return_rv;
+	    }
+
+	  RoscoServiceType *rv = DSK_NEW0 (RoscoServiceType);
+          rv->is_static = DSK_FALSE;
+          rv->name = dsk_strdup (normalized_name);
+	  rv->cname = message_name_to_cname (normalized_name);
+
+	  RoscoMessageType *input_mt = DSK_NEW0 (RoscoMessageType);
+	  input_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
+	  input_mt->base.cname = message_name_to_cname (normalized_name);
+	  input_mt->base.name = dsk_strdup (normalized_name);
+	  input_mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
+	  input_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
+	  input_mt->base.alignof_ctype = alignof (RoscoMessage *);
+	  input_mt->base.serialize = message_serialize;
+	  input_mt->base.deserialize = message_deserialize;
+	  input_mt->n_fields = n_input_fields;
+	  input_mt->fields = input_fields;
+	  input_mt->sizeof_message = sizeof_input_message;
+          rv->input = input_mt;
+
+	  RoscoMessageType *output_mt = DSK_NEW0 (RoscoMessageType);
+	  output_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
+	  output_mt->base.cname = message_name_to_cname (normalized_name);
+	  output_mt->base.name = dsk_strdup (normalized_name);
+	  output_mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
+	  output_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
+	  output_mt->base.alignof_ctype = alignof (RoscoMessage *);
+	  output_mt->base.serialize = message_serialize;
+	  output_mt->base.deserialize = message_deserialize;
+	  output_mt->n_fields = n_output_fields;
+	  output_mt->fields = output_fields;
+	  output_mt->sizeof_message = sizeof_output_message;
+          rv->output = output_mt;
+
+	  rv_stype = type_context_register_service (context, rv);
+          dsk_free (filename);
+          dsk_free (contents);
+          goto cleanup_and_return_rv;
+	}
+      dsk_free (filename);
+    }
+  dsk_set_error (error, "service type %s not found", normalized_name);
   
+cleanup_and_return_rv: 
+  dsk_free (to_free);
+  return rv_stype ? rv_stype->service_type : NULL;
 }
 
 static void
@@ -1000,6 +1163,8 @@ free_type_and_array_types (RoscoType *type)
 	dsk_free (type->cname);
 	dsk_free (type->func_prefix_name);
 	break;
+      default:
+        break;
     }
   free_type_and_array_types ((RoscoType *) type->vararray_type);
   for (unsigned i = 0; i < type->n_fixed_array_types; i++)
