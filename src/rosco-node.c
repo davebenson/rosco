@@ -20,12 +20,12 @@ struct RoscoNode
 {
   DskObject base_instance;
   DskUrl *master_url;
-  RoscoTypeSystem *type_system;
-
   char *name;
   const RoscoNodeFuncs *funcs;
   void *funcs_data;
   DskDestroyNotify funcs_data_destroy;
+
+  RoscoTypeContext *type_context;
 
   RoscoNodeRegistrationState registration_state;
   DskDispatchTimer *registration_retry_timer;
@@ -195,8 +195,14 @@ static DskHttpClientStreamFuncs rosco_node_http_client_request_funcs = {
   rosco_xmlrpc_http_client__handle_content_complete,
   rosco_xmlrpc_http_client__handle_error,
   rosco_xmlrpc_http_client__destroy
+=======
+>>>>>>> tmp
 };
 
+typedef struct RoscoXmlrpcHttpClientUserData {
+  RoscoNodeExecuteCallback callback;
+  void *callback_data;
+} RoscoXmlrpcHttpClientUserData;
 void rosco_node_execute_on_master (RoscoNode                 *node,
                                    const char                *method,
                                    unsigned                   n_params,
@@ -223,19 +229,33 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   DskHttpClientStreamOptions hcs_options = DSK_HTTP_CLIENT_STREAM_OPTIONS_INIT;
   hcs_options.max_pipelined_requests = 0;
   DskHttpClientStream *cs = dsk_http_client_stream_new (sink, source, &hcs_options);
+<<<<<<< bcce66c4b76eae755c38132d88fb98c35eb0a182
   DskHttpRequestOptions req_header_options = DSK_HTTP_REQUEST_OPTIONS_INIT;
+=======
+>>>>>>> tmp
   DskHttpClientStreamRequestOptions request_options = DSK_HTTP_CLIENT_STREAM_REQUEST_OPTIONS_INIT;
   request_options.request_options = &req_header_options;
   req_header_options.method = DSK_HTTP_METHOD_POST;
   DskBuffer xml_buffer = DSK_BUFFER_INIT;
   DskXml *xml = dsk_xmlrpc_make_method_request (method, n_params, params);
+<<<<<<< bcce66c4b76eae755c38132d88fb98c35eb0a182
   dsk_xml_to_buffer (xml, &xml_buffer);
+=======
+  dsk_xml_write_to_buffer (xml, &xml_buffer);
+>>>>>>> tmp
   request_options.post_data_length = xml_buffer.size;
   char *xml_string = dsk_buffer_empty_to_string (&xml_buffer);
-  request_options.post_data_slab = xml_string;
+  request_options.post_data_slab = (uint8_t *) xml_string;
   request_options.content_type = "text/xml";
+<<<<<<< bcce66c4b76eae755c38132d88fb98c35eb0a182
   request_options.funcs = &rosco_node_http_client_request_funcs;
   RoscoXmlrpcHttpClientUserData *user_data = rosco_xmlrpc_http_client_user_data_new (callback, callback_data);
+=======
+  //request_options.funcs = &rosco_node_http_client_request_funcs;
+  RoscoXmlrpcHttpClientUserData *user_data = DSK_NEW (RoscoXmlrpcHttpClientUserData);
+  user_data->callback = callback;
+  user_data->callback_data = callback_data;
+>>>>>>> tmp
   request_options.user_data = user_data;
   DskHttpClientStreamTransfer *xfer = dsk_http_client_stream_request (cs, &request_options, &error);
   dsk_free (xml_string);
@@ -243,11 +263,19 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
   dsk_http_client_stream_shutdown (cs);
   if (xfer == NULL)
     {
+<<<<<<< bcce66c4b76eae755c38132d88fb98c35eb0a182
       rosco_xmlrpc_http_client_user_data_invoke_fail (user_data, error);
+=======
+      RoscoNodeExecuteResult result;
+      result.result = ROSCO_NODE_EXECUTE_RESULT_FAILED;
+      result.info.failed.error = error;
+      callback (&result, callback_data);
+>>>>>>> tmp
       dsk_free (request_options.user_data);
       dsk_error_unref (error);
       error = NULL;
     }
+<<<<<<< bcce66c4b76eae755c38132d88fb98c35eb0a182
 
   dsk_object_unref (sink);
   dsk_object_unref (source);
@@ -256,14 +284,17 @@ void rosco_node_execute_on_master (RoscoNode                 *node,
 
 ROSCO__GET_LOGGERS__STATIC_ADVERTISEMENT(get_loggers, Rosco__GetLoggers)
 {
+=======
+>>>>>>> tmp
 }
 ROSCO__SET_LOG_LEVEL__STATIC_ADVERTISEMENT(set_log_level, Rosco__SetLogLevel)
 {
 }
 
 
-RoscoNode          *
+RoscoNode *
 rosco_node_new              (DskUrl               *master_url,
+                             RoscoTypeContext     *type_context,
                              const char           *name,
                              const RoscoNodeFuncs *funcs, 
                              void                 *funcs_data,
@@ -280,6 +311,7 @@ rosco_node_new              (DskUrl               *master_url,
   rv->funcs = funcs;
   rv->funcs_data = funcs_data;
   rv->funcs_data_destroy = funcs_data_destroy;
+  rv->type_context = type_context;
 
   // register node
   rv->registration_state = ROSCO_NODE_REGISTRATION_PENDING;

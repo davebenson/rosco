@@ -75,7 +75,7 @@ dsk_boolean dsk_xml_is_element (const DskXml *xml, const char *name);
 DskXml *dsk_xml_find_solo_child (DskXml *, DskError **error);
 
 /* --- simple (namespace free) serialization --- */
-void dsk_xml_to_buffer (const DskXml *xml, DskBuffer *output);
+void dsk_xml_write_to_buffer (const DskXml *xml, DskBuffer *buffer);
 
 /* FOR INTERNAL USE ONLY: create an xml node from a packed set of
    attributes, and a set of children, which we will take ownership of.

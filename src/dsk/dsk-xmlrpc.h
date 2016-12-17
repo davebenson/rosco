@@ -14,6 +14,12 @@ typedef enum {
 typedef struct DskXmlrpcValue DskXmlrpcValue;
 typedef struct DskXmlrpcMember DskXmlrpcMember;
 
+struct DskXmlrpcMember {
+  const char *name;
+  DskXmlrpcValue *value;
+};
+
+
 struct DskXmlrpcValue {
   DskXmlrpcValueType type;
   union {
@@ -31,11 +37,6 @@ struct DskXmlrpcValue {
       DskXmlrpcValue **values;
     } v_array;
   };
-};
-
-struct DskXmlrpcMember {
-  char *name;
-  DskXmlrpcValue value;
 };
 
 DskXml *dsk_xmlrpc_make_method_request (const char *method_name,
