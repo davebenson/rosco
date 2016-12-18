@@ -221,8 +221,8 @@ int main(int argc, char **argv)
 
   if (all) all_services = all_messages = DSK_TRUE;
   if (common_dest_dir) {
-    c_dest_dir = dsk_strdup_printf ("%s/src", common_dest_dir);
-    h_dest_dir = dsk_strdup_printf ("%s/include", common_dest_dir);
+    c_dest_dir = dsk_strdup_printf ("%s", common_dest_dir);
+    h_dest_dir = dsk_strdup_printf ("%s", common_dest_dir);
   }
 
   //TODO: check all message-types and service-types exist before beginning codegen
@@ -279,8 +279,8 @@ dsk_warning("generating service %u: %s", (unsigned)i, service_type_names.strs.da
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
       generate_service_type (service_types[i], &h_code, &c_code);
-      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, message_type_names.strs.data[i]);
-      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, message_type_names.strs.data[i]);
+      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, service_type_names.strs.data[i]);
+      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, service_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_free (c_path);

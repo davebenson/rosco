@@ -1116,10 +1116,11 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 	  rv->cname = message_name_to_cname (normalized_name);
 
 	  RoscoMessageType *input_mt = DSK_NEW0 (RoscoMessageType);
+          char *input_normalized_name = dsk_strdup_printf("%s/Request", normalized_name);
 	  input_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-	  input_mt->base.cname = message_name_to_cname (normalized_name);
-	  input_mt->base.name = dsk_strdup (normalized_name);
-	  input_mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
+	  input_mt->base.cname = message_name_to_cname (input_normalized_name);
+	  input_mt->base.name = input_normalized_name; /* takes ownership */
+	  input_mt->base.func_prefix_name = message_name_to_func_prefix (input_normalized_name);
 	  input_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
 	  input_mt->base.alignof_ctype = alignof (RoscoMessage *);
 	  input_mt->base.serialize = message_serialize;
@@ -1130,10 +1131,11 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
           rv->input = input_mt;
 
 	  RoscoMessageType *output_mt = DSK_NEW0 (RoscoMessageType);
+          char *output_normalized_name = dsk_strdup_printf("%s/Response", normalized_name);
 	  output_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-	  output_mt->base.cname = message_name_to_cname (normalized_name);
-	  output_mt->base.name = dsk_strdup (normalized_name);
-	  output_mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
+	  output_mt->base.cname = message_name_to_cname (output_normalized_name);
+	  output_mt->base.name = output_normalized_name; /* takes ownership */
+	  output_mt->base.func_prefix_name = message_name_to_func_prefix (output_normalized_name);
 	  output_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
 	  output_mt->base.alignof_ctype = alignof (RoscoMessage *);
 	  output_mt->base.serialize = message_serialize;

@@ -122,11 +122,11 @@ src/tools/rosco-codegen-main.c
 rosco_codegen_LDADD = \
 -lbz2 -lz
 
-rosco-services/rosco/%.c rosco-services/rosco/%.h: srv/rosco/%.srv rosco-codegen
-	./rosco-codegen --src-dir=. --service=rosco/$* --dest=rosco-services
+generated/rosco/%.c generated/rosco/%.h: srv/rosco/%.srv rosco-codegen
+	./rosco-codegen --src-dir=. --service=rosco/$* --dest=generated
 
 lib_LIBRARIES = librosco.a
 librosco_a_SOURCES =  \
 $(rosco_bootstrap_c_files) \
-rosco-services/rosco/GetLoggers.c \
+generated/rosco/GetLoggers.c \
 src/rosco-node.c
