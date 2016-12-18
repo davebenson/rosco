@@ -22,6 +22,10 @@
 #include "dsk-octet-fd.h"
 #include "dsk-octet-listener-socket.h"
 
+#if !defined(AF_LOCAL) && defined(AF_UNIX)
+#  define AF_LOCAL AF_UNIX
+#endif
+
 static DskIOResult
 dsk_octet_listener_socket_accept (DskOctetListener        *listener,
                                   DskOctetStream         **stream_out,

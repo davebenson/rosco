@@ -2,12 +2,15 @@
 /// 'cept tmpdir()
 
 #define _POSIX_C_SOURCE  200809L
+#define _DARWIN_C_SOURCE
+
 #define _ATFILE_SOURCE
 #include <alloca.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
