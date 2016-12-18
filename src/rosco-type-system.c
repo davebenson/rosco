@@ -2,6 +2,7 @@
 #include <stdalign.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "dsk/dsk-rbtree-macros.h"
 #include "dsk/dsk-tmp-array-macros.h"
 
@@ -400,7 +401,7 @@ rosco_type__deserialize__duration(RoscoType *type,
 }
 #define rosco_type__destruct__duration rosco_type__destruct__no_op
 static RoscoType rosco_type__duration = DEFINE_ROSCO_TYPE(DURATION, RoscoDuration, duration, rosco_duration);
-static void
+static RoscoTypeContextType *
 type_context_register_type (RoscoTypeContext *ctx, RoscoType *type)
 {
   RoscoTypeContextType *node = DSK_NEW (RoscoTypeContextType);
@@ -408,6 +409,7 @@ type_context_register_type (RoscoTypeContext *ctx, RoscoType *type)
   RoscoTypeContextType *conflict;
   DSK_RBTREE_INSERT (GET_TYPE_TREE (ctx), node, conflict);
   assert(conflict == NULL);
+  return node;
 }
 
 RoscoTypeContext *
@@ -622,9 +624,11 @@ parse_message_fields_from_string (RoscoTypeContext *context,
       const char *end_type = start_field_name;
       while (end_type > at && dsk_ascii_isspace (*(end_type-1)))
         end_type--;
+      fprintf(stderr, "calling rosco_type_context_get on %.*s\n", (int)(end_type-at),at);
       RoscoType *field_type = rosco_type_context_get (context, at, end_type - at, error);
       if (field_type == NULL)
         {
+          fprintf(stderr, "FAIL!\n");
           goto fail;
         }
       
@@ -639,6 +643,8 @@ parse_message_fields_from_string (RoscoTypeContext *context,
 
       cur_offset += field_type->sizeof_ctype;
       lineno++;
+
+      at = end_line + 1;
     }
 
   // round cur_offset up to max_alignment
@@ -797,7 +803,6 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
   DSK_RBTREE_LOOKUP_COMPARATOR (GET_TYPE_TREE (context), normalized_name, COMPARE_NORMALIZED_NAME, mctype);
   if (mctype != NULL)
     {
-      dsk_set_error (error, "type not found: %s", normalized_name);
       return mctype->type;
     }
   
@@ -870,11 +875,11 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
               mt->sizeof_message = sizeof_message;
               rv = (RoscoType *) mt;
 
-              type_context_register_type (context, rv);
+              mctype = type_context_register_type (context, rv);
             }
           dsk_free (filename);
         }
-      if (mctype == NULL)
+      if (rv == NULL)
         {
           dsk_set_error (error, "type %s not found", base_type);
           goto cleanup_and_return_rv;
@@ -983,7 +988,7 @@ find_minusminusminus_sep (size_t len, const uint8_t *contents, const uint8_t **s
   const uint8_t *end = at + len;
   while (at < end - 3)
     {
-      if (*at++ == '\n')
+      if (at == contents || *at++ == '\n')
         {
           /* skip leading whitespace;
            * if this skips a newline it doesn't matter. */
@@ -1091,6 +1096,7 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
           const uint8_t *content_end = contents + content_size;
           const uint8_t *response_start = end_minusminusminus;
           unsigned response_line_no = count_newlines (response_start - contents, contents);
+          fprintf(stderr, "calling parse_message_fields_from_string..\n");
 	  if (!parse_message_fields_from_string (context,
                                                  content_end - response_start,
 						 response_start,
