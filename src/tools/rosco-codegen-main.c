@@ -266,8 +266,8 @@ dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.da
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
       generate_message_type (message_types[i], &h_code, &c_code);
-      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, message_type_names.strs.data[i]);
-      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, message_type_names.strs.data[i]);
+      char *h_path = dsk_strdup_printf ("%s/rosco/messages/%s.h", h_dest_dir, message_type_names.strs.data[i]);
+      char *c_path = dsk_strdup_printf ("%s/rosco/messages/%s.c", c_dest_dir, message_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_free (c_path);
@@ -278,9 +278,11 @@ dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.da
 dsk_warning("generating service %u: %s", (unsigned)i, service_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
-      generate_service_type (service_types[i], &h_code, &c_code);
-      char *h_path = dsk_strdup_printf ("%s/%s.h", h_dest_dir, service_type_names.strs.data[i]);
-      char *c_path = dsk_strdup_printf ("%s/%s.c", c_dest_dir, service_type_names.strs.data[i]);
+      dsk_buffer_printf(&h_code, "#include <rosco.h>\n");
+      dsk_buffer_printf(&c_code, "#include <rosco/services/%s.h>\n", service_types[i]->name);
+      generate_service_type (service_types[i], &c_code, &h_code);
+      char *h_path = dsk_strdup_printf ("%s/rosco/services/%s.h", h_dest_dir, service_type_names.strs.data[i]);
+      char *c_path = dsk_strdup_printf ("%s/rosco/services/%s.c", c_dest_dir, service_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_buffer_dump (&c_code, c_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
       dsk_free (c_path);
