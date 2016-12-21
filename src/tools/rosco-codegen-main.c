@@ -145,7 +145,7 @@ generate_message_type (RoscoMessageType *type,
       RoscoMessageTypeField *field = type->fields + i;
       RoscoType *ftype = field->type;
       dsk_buffer_printf (ccode,
-       "  if (!rosco_serialize__%s (%s(value->%s), target, error))\n"
+       "  if (!%s__serialize (%s(value->%s), target, error))\n"
        "    {\n"
        "      return DSK_FALSE;\n"
        "    }\n",
@@ -154,6 +154,68 @@ generate_message_type (RoscoMessageType *type,
     }
   dsk_buffer_printf(ccode,
     "  return DSK_TRUE;\n"
+    "}\n"
+  );
+  dsk_buffer_printf (ccode,
+    "static DskMessageType %s__message_type = {\n"
+    "  {\n"
+    "    ROSCO_BUILTIN_TYPE_MESSAGE,\n"
+    "    DSK_TRUE,		/* is_static */\n"
+    "    DSK_TRUE,		/* pass_by_ref */\n"
+    "    \"%s\",\n"
+    "    \"%s\",\n"
+    "    \"%s\",\n"
+    "    sizeof(RoscoMessage *),\n"
+    "    alignof(RoscoMessage *),\n"
+    "    #c_type,\n"
+    "    %s__serialize,\n"
+    "    %s__deserialize,\n"
+    "    %s__destruct,\n"
+    "    NULL,\n"
+    "    0,\n"
+    "    NULL\n"
+    "  },\n"
+    "  \"%s\",\n"
+    "  %u,\n"
+    "  %s__fields,\n"
+    "  sizeof(%s)\n"
+    "}\n",
+    type->base.func_prefix_name,
+    type->base.cname,
+    type->base.name,
+    type->base.func_prefix_name,
+    type->base.func_prefix_name,
+    type->base.func_prefix_name,
+    type->base.func_prefix_name,
+    type->instance_name,
+    (unsigned) type->n_fields,
+    type->base.func_prefix_name,
+    type->instance_name
+  );
+  dsk_buffer_printf (ccode,
+    "RoscoType %s__get_type()\n"
+    "{\n",
+    type->base.func_prefix_name
+  );
+  if (type->n_fields > 0)
+    {
+      dsk_buffer_printf (ccode,
+        "  if (%s__fields[0].type == NULL)\n"
+        "    {\n",
+        type->base.func_prefix_name
+      );
+      for (unsigned i = 0; i < type->n_fields; i++)
+        dsk_buffer_printf (ccode,
+          "      %s__fields[%u] = %s__get_type();\n",
+          type->base.func_prefix_name,
+          i,
+          type->fields[i].type->func_prefix_name
+        );
+      dsk_buffer_printf (ccode,
+        "    }\n"
+      );
+    }
+  dsk_buffer_printf (ccode,
     "}\n"
   );
 }

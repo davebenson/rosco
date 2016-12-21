@@ -88,6 +88,7 @@ struct RoscoType {
 
 struct RoscoMessageType {
   RoscoType base;
+  const char *instance_name;
   unsigned n_fields;
   RoscoMessageTypeField *fields;
   size_t sizeof_message;
