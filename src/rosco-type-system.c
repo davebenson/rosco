@@ -45,6 +45,7 @@ struct RoscoTypeContextRecGuard {
   DSK_FALSE,		/* pass_by_ref */             \
   #c_type,                                            \
   #name,                                              \
+  #name,                                              \
   #func_prefix,                                       \
   sizeof(c_type),                                     \
   alignof(c_type),                                    \
@@ -530,6 +531,16 @@ array_deserialize (RoscoType   *type,
   return DSK_TRUE;
 }
 
+static inline void
+setup_basename (RoscoType *type)
+{
+  type->base_name = strchr (type->name, '/');
+  if (type->base_name == NULL)
+    type->base_name = type->name;
+  else
+    type->base_name += 1;
+}
+
 static RoscoType *
 _rosco_type_get_array_type         (RoscoType *type, ssize_t length)
 {
@@ -541,6 +552,7 @@ _rosco_type_get_array_type         (RoscoType *type, ssize_t length)
 	  atype->base.type = ROSCO_BUILTIN_TYPE_ARRAY;
 	  atype->base.cname = "RoscoArray";
 	  atype->base.name = dsk_strdup_printf("%s[]", type->name);
+          setup_basename (&atype->base);
 	  atype->base.func_prefix_name = NULL;
 	  atype->base.sizeof_ctype = sizeof (RoscoArray);
 	  atype->base.alignof_ctype = alignof (RoscoArray);
@@ -566,6 +578,7 @@ _rosco_type_get_array_type         (RoscoType *type, ssize_t length)
 	  atype->base.type = ROSCO_BUILTIN_TYPE_ARRAY;
 	  atype->base.cname = "RoscoArray";
 	  atype->base.name = dsk_strdup_printf("%s[%u]", type->name, (unsigned) length);
+          setup_basename (&atype->base);
 	  atype->base.func_prefix_name = NULL;
 	  atype->base.sizeof_ctype = sizeof (RoscoArray);
 	  atype->base.alignof_ctype = alignof (RoscoArray);
@@ -865,6 +878,7 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
               mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
               mt->base.cname = message_name_to_cname (normalized_name);
               mt->base.name = dsk_strdup (normalized_name);
+              setup_basename (&mt->base);
               mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
               mt->base.sizeof_ctype = sizeof (RoscoMessage *);
               mt->base.alignof_ctype = alignof (RoscoMessage *);

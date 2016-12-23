@@ -1,4 +1,4 @@
-CFLAGS = -std=c99 @CFLAGS@ -Igenerated -Isrc
+CFLAGS = -std=c99 @CFLAGS@ -Igenerated -I$(srcdir)/src
 
 # Files which are used BY the code-generator, but do NOT use the
 # code generator, hence can be made into a helper library

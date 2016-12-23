@@ -61,6 +61,7 @@ struct RoscoType {
   unsigned pass_by_ref : 1;
   char *cname;
   char *name;
+  char *base_name;
   char *func_prefix_name;
   size_t sizeof_ctype;
   size_t alignof_ctype;

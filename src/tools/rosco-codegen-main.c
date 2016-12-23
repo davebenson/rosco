@@ -165,6 +165,7 @@ generate_message_type (RoscoMessageType *type,
     "    \"%s\",\n"
     "    \"%s\",\n"
     "    \"%s\",\n"
+    "    \"%s\",\n"
     "    sizeof(RoscoMessage *),\n"
     "    alignof(RoscoMessage *),\n"
     "    #c_type,\n"
@@ -183,6 +184,7 @@ generate_message_type (RoscoMessageType *type,
     type->base.func_prefix_name,
     type->base.cname,
     type->base.name,
+    type->base.base_name,
     type->base.func_prefix_name,
     type->base.func_prefix_name,
     type->base.func_prefix_name,
@@ -233,6 +235,18 @@ generate_service_type (RoscoServiceType *type,
     "extern RoscoServiceType %s;\n",
      type->cname
   );
+}
+
+static void
+generate_preambles (const char *type_name,
+                    const char *name,
+                    DskBuffer *c_code,
+                    DskBuffer *h_code)
+{
+  dsk_buffer_printf(h_code, "/* Generated code. */\n\n");
+  dsk_buffer_printf(c_code, "/* Generated code. */\n\n");
+  dsk_buffer_printf(h_code, "#include <rosco.h>\n");
+  dsk_buffer_printf(c_code, "#include <rosco/%ss/%s.h>\n", type_name, name);
 }
 
 int main(int argc, char **argv)
@@ -333,8 +347,7 @@ int main(int argc, char **argv)
 dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
-      dsk_buffer_printf(&c_code, "#include <rosco/messages/%s.h>\n", message_types[i]->base.name);
-      dsk_buffer_printf(&h_code, "#include <rosco.h>\n");
+      generate_preambles ("message", message_type_names.strs.data[i], &c_code, &h_code);
       generate_message_type (message_types[i], &c_code, &h_code);
       char *h_path = dsk_strdup_printf ("%s/rosco/messages/%s.h", h_dest_dir, message_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/rosco/messages/%s.c", c_dest_dir, message_type_names.strs.data[i]);
@@ -348,8 +361,7 @@ dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.da
 dsk_warning("generating service %u: %s", (unsigned)i, service_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
-      dsk_buffer_printf(&h_code, "#include <rosco.h>\n");
-      dsk_buffer_printf(&c_code, "#include <rosco/services/%s.h>\n", service_types[i]->name);
+      generate_preambles ("service", service_type_names.strs.data[i], &c_code, &h_code);
       generate_service_type (service_types[i], &c_code, &h_code);
       char *h_path = dsk_strdup_printf ("%s/rosco/services/%s.h", h_dest_dir, service_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/rosco/services/%s.c", c_dest_dir, service_type_names.strs.data[i]);
