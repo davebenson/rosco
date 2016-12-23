@@ -1,5 +1,6 @@
 
 /* --- Defining our XMLRPC services --- */
+typedef struct RoscoXmlrpcServer RoscoXmlrpcServer;
 typedef struct RoscoXmlrpcClosure RoscoXmlrpcClosure;
 typedef void (*RoscoXmlrpcMethodFunc) (size_t                  n_params,
                                        const DskXmlrpcValue  **params,

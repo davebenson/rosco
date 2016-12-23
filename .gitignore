@@ -19,3 +19,5 @@ src/dsk/programs/*.o
 src/dsk/programs/.deps
 src/dsk/programs/.dirstamp
 librosco.a
+generated
+rosco-codegen

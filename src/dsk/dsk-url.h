@@ -56,17 +56,19 @@ struct _DskUrl
   char *fragment;
 };
 
-DskUrl *dsk_url_new           (const char *str, 
-                               DskError  **error);
-DskUrl *dsk_url_new_from_base (DskUrl *base,
-                               const char *path,
-                               DskError  **error);
-DskUrl *dsk_url_new_from_parts(const char *scheme,
-                               const char *username,
-                               const char *password,
-                               const char *host,
-                               int         port,
-                               const char *path,
-                               const char *query,
-                               const char *fragment);
+DskUrl *dsk_url_new              (const char *str, 
+                                  DskError  **error);
+DskUrl *dsk_url_new_from_base    (DskUrl *base,
+                                  const char *path,
+                                  DskError  **error);
+DskUrl *dsk_url_new_from_scanned (DskUrlScanned *scanned,
+                                  DskError  **error);
+DskUrl *dsk_url_new_from_parts   (const char *scheme,
+                                  const char *username,
+                                  const char *password,
+                                  const char *host,
+                                  int         port,
+                                  const char *path,
+                                  const char *query,
+                                  const char *fragment);
 

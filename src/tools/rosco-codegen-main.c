@@ -74,14 +74,16 @@ generate_message_type (RoscoMessageType *type,
 {
   dsk_buffer_printf (
     hcode,
+    "typedef struct %s %s;\n"
     "struct %s\n{\n  RoscoMessage base_instance;\n",
+    type->base.cname, type->base.cname,
     type->base.cname
   );
   unsigned i;
   for (i = 0; i < type->n_fields; i++)
     {
       dsk_buffer_printf (
-        ccode,
+        hcode,
         "  %s %s;\n",
         type->fields[i].type->cname,
         type->fields[i].name
@@ -112,16 +114,19 @@ generate_message_type (RoscoMessageType *type,
   for (size_t i = 0; i < type->n_fields; i++)
     {
       dsk_buffer_printf (ccode,
-        "  { \"%s\", %s, offsetof(%s, %s) },\n",
-        type->fields[i].type->cname,
+        "  { \"%s\", NULL, offsetof(%s, %s) },\n",
         type->fields[i].name,
-        type->fields[i].type->cname,
+        type->base.cname,
         type->fields[i].name
       );
     }
   dsk_buffer_printf (ccode,
     "};\n"
   );
+  dsk_buffer_printf (ccode,
+    "static RoscoMessageType %s__message_type = {\n"
+    " 
+        type->fields[i].type->func_prefix_name,
   int func_prefix_len = strlen (type->base.func_prefix_name);
 
   // C File:  implement serialize/deserialize
@@ -148,7 +153,8 @@ generate_message_type (RoscoMessageType *type,
        field->name);
     }
   dsk_buffer_printf(ccode,
-    "return DSK_TRUE;\n"
+    "  return DSK_TRUE;\n"
+    "}\n"
   );
 }
 
@@ -265,7 +271,9 @@ int main(int argc, char **argv)
 dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
-      generate_message_type (message_types[i], &h_code, &c_code);
+      dsk_buffer_printf(&c_code, "#include <rosco/messages/%s.h>\n", message_types[i]->base.name);
+      dsk_buffer_printf(&h_code, "#include <rosco.h>\n");
+      generate_message_type (message_types[i], &c_code, &h_code);
       char *h_path = dsk_strdup_printf ("%s/rosco/messages/%s.h", h_dest_dir, message_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/rosco/messages/%s.c", c_dest_dir, message_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);

@@ -1,4 +1,4 @@
-CFLAGS = -std=c99 @CFLAGS@
+CFLAGS = -std=c99 @CFLAGS@ -Igenerated -Isrc
 
 # Files which are used BY the code-generator, but do NOT use the
 # code generator, hence can be made into a helper library
@@ -122,6 +122,12 @@ src/tools/rosco-codegen-main.c
 rosco_codegen_LDADD = \
 -lbz2 -lz
 
+# Seems to work for normal builds, but not for distcheck?
+#generated/rosco/messages/%.c generated/rosco/messages/%.h: msg/%.msg rosco-codegen
+#	./rosco-codegen --src-dir=. --message=$* --dest=generated
+#generated/rosco/messages/%.c generated/rosco/services/%.h: srv/%.srv rosco-codegen
+#	./rosco-codegen --src-dir=. --service=$* --dest=generated
+
 generated/rosco/messages/std_msgs/%.c generated/rosco/messages/std_msgs/%.h: msg/std_msgs/%.msg rosco-codegen
 	./rosco-codegen --src-dir=. --message=std_msgs/$* --dest=generated
 generated/rosco/messages/std_srvs/%.c generated/rosco/services/std_srvs/%.h: srv/std_srvs/%.srv rosco-codegen
@@ -133,3 +139,6 @@ $(rosco_bootstrap_c_files) \
 generated/rosco/messages/std_msgs/Logger.c \
 generated/rosco/services/std_srvs/GetLoggers.c \
 src/rosco-node.c
+
+CLEANFILES = generated/rosco/messages/*/*.[ch] generated/rosco/services/*/*.[ch]
+	-rm -rf generated

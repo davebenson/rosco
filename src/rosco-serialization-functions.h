@@ -2,7 +2,7 @@
  * from generated message and service files.
  */
 
-inline dsk_boolean 
+static inline dsk_boolean 
 rosco_deserialization_check_min_size (DskBuffer *buffer,
                                       size_t     min_size,
                                       RoscoType *type,
@@ -17,7 +17,7 @@ rosco_deserialization_check_min_size (DskBuffer *buffer,
     return DSK_TRUE;
 }
 
-inline dsk_boolean
+static inline dsk_boolean
 rosco_serialization__bool  (RoscoType        *type,
 		            const rosco_bool *ptr_value,
 		            DskBuffer        *out,
@@ -26,7 +26,7 @@ rosco_serialization__bool  (RoscoType        *type,
   dsk_buffer_append_byte (out, *ptr_value);
   return DSK_TRUE;
 }
-inline dsk_boolean
+static inline dsk_boolean
 rosco_deserialization__bool  (RoscoType   *type,
 			      DskBuffer   *in,
 			      rosco_bool  *ptr_value_out,
@@ -37,7 +37,7 @@ rosco_deserialization__bool  (RoscoType   *type,
   *ptr_value_out = dsk_buffer_read_byte (in);
   return DSK_TRUE;
 }
-inline dsk_boolean
+static inline dsk_boolean
 rosco_serialization__uint8 (RoscoType        *type,
 		            const uint8_t    *ptr_value,
 		            DskBuffer        *out,
@@ -46,7 +46,7 @@ rosco_serialization__uint8 (RoscoType        *type,
   dsk_buffer_append_byte (out, *ptr_value);
   return DSK_TRUE;
 }
-inline dsk_boolean
+static inline dsk_boolean
 rosco_deserialization__uint8 (RoscoType   *type,
 			      DskBuffer   *in,
 			      uint8_t     *ptr_value_out,
@@ -57,7 +57,7 @@ rosco_deserialization__uint8 (RoscoType   *type,
   *ptr_value_out = dsk_buffer_read_byte (in);
   return DSK_TRUE;
 }
-inline dsk_boolean
+static inline dsk_boolean
 rosco_serialization__int8  (RoscoType        *type,
 		            const int8_t     *ptr_value,
 		            DskBuffer        *out,
@@ -66,7 +66,7 @@ rosco_serialization__int8  (RoscoType        *type,
   dsk_buffer_append_byte (out, *ptr_value);
   return DSK_TRUE;
 }
-inline dsk_boolean
+static inline dsk_boolean
 rosco_deserialization__int8 (RoscoType   *type,
 			     DskBuffer   *in,
 			     int8_t      *ptr_value_out,
