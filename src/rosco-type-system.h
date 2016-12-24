@@ -15,7 +15,6 @@ typedef struct RoscoTypeContextRecGuard RoscoTypeContextRecGuard;
 #include "dsk/dsk.h"
 #include <unistd.h>
 
-typedef uint8_t rosco_bool;
 typedef struct RoscoTime
 {
   uint32_t secs, nsecs;
@@ -89,7 +88,6 @@ struct RoscoType {
 
 struct RoscoMessageType {
   RoscoType base;
-  const char *instance_name;
   unsigned n_fields;
   RoscoMessageTypeField *fields;
   size_t sizeof_message;

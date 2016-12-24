@@ -1,4 +1,4 @@
-#include "rosco-type-system.h"
+#include "rosco.h"
 #include <stdalign.h>
 #include <string.h>
 #include <stdlib.h>
@@ -599,6 +599,7 @@ parse_message_fields_from_string (RoscoTypeContext *context,
                                   size_t *n_fields_out, 
                                   RoscoMessageTypeField **fields_out,
                                   size_t *sizeof_message_out,
+                                  size_t *alignof_message_out,
                                   DskError **error)
 {
   const char *at = (const char *) text;
@@ -606,6 +607,7 @@ parse_message_fields_from_string (RoscoTypeContext *context,
   DSK_TMP_ARRAY_DECLARE (RoscoMessageTypeField, fields, 16);
   unsigned lineno = start_line;
   size_t cur_offset = sizeof (RoscoMessage);
+  size_t cur_align = alignof (RoscoMessage);
   while (at < end)
     {
       const char *nl = memchr (at, '\n', end - at);
@@ -647,6 +649,7 @@ parse_message_fields_from_string (RoscoTypeContext *context,
       
       // round cur_offset up to alignment
       cur_offset = DSK_ALIGN(cur_offset, field_type->alignof_ctype);
+      cur_align = DSK_MAX(cur_align, field_type->alignof_ctype);
 
       RoscoMessageTypeField field;
       field.type = field_type;
@@ -666,6 +669,7 @@ parse_message_fields_from_string (RoscoTypeContext *context,
   *n_fields_out = fields.length;
   DSK_TMP_ARRAY_CLEAR_TO_ALLOCATION (fields, *fields_out);
   *sizeof_message_out = cur_offset;
+  *alignof_message_out = cur_align;
   return DSK_TRUE;
 
 fail:
@@ -735,7 +739,7 @@ message_deserialize (RoscoType   *type,
 }
 
 static char *
-message_name_to_cname (const char *name)
+name_to_cname (const char *name)
 {
   size_t rv_len = 0;
   for (const char *at = name; *at; at++)
@@ -788,18 +792,29 @@ message_name_to_func_prefix (const char *name)
   char *rv = dsk_malloc (rv_len + 1);	/* +1 for terminal NUL */
   char *rv_at = rv;
   const char *at = name;
-  while (at < ns_end)
+  dsk_boolean word_start = DSK_TRUE;
+  while (*at)
     {
       if (*at == '/')
         {
           *rv_at++ = '_';
           *rv_at++ = '_';
+          word_start = DSK_TRUE;
         }
       else
-	*rv_at++ = *at;
+        {
+          if (dsk_ascii_isupper (*at))
+            {
+              if (!word_start)
+                *rv_at++ = '_';
+              *rv_at++ = *at + ('a' - 'A');
+            }
+          else
+            *rv_at++ = *at;
+          word_start = DSK_FALSE;
+        }
       at++;
     }
-  strcpy (rv_at, at);
   return rv;
 }
 
@@ -862,11 +877,13 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
               size_t n_fields;
               RoscoMessageTypeField *fields;
               size_t sizeof_message;
+              size_t alignof_message;
               if (!parse_message_fields_from_string (context,
                                                      content_size, contents,
                                                      filename, 1,
                                                      &n_fields, &fields,
                                                      &sizeof_message,
+                                                     &alignof_message,
                                                      error))
                 { 
                   dsk_free (contents);
@@ -876,17 +893,17 @@ _rosco_type_context_get        (RoscoTypeContext    *context,
 
               RoscoMessageType *mt = DSK_NEW0 (RoscoMessageType);
               mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-              mt->base.cname = message_name_to_cname (normalized_name);
+              mt->base.cname = name_to_cname (normalized_name);
               mt->base.name = dsk_strdup (normalized_name);
               setup_basename (&mt->base);
               mt->base.func_prefix_name = message_name_to_func_prefix (normalized_name);
-              mt->base.sizeof_ctype = sizeof (RoscoMessage *);
-              mt->base.alignof_ctype = alignof (RoscoMessage *);
+              mt->base.sizeof_ctype = sizeof_message;
+              mt->base.alignof_ctype = alignof_message;
               mt->base.serialize = message_serialize;
               mt->base.deserialize = message_deserialize;
+              mt->base.c_input_arg_type = dsk_strdup_printf ("const %s *", mt->base.cname);
               mt->n_fields = n_fields;
               mt->fields = fields;
-              mt->sizeof_message = sizeof_message;
               rv = (RoscoType *) mt;
 
               mctype = type_context_register_type (context, rv);
@@ -1080,10 +1097,10 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 	{
 	  size_t n_input_fields;
 	  RoscoMessageTypeField *input_fields;
-	  size_t sizeof_input_message;
+	  size_t sizeof_input_message, alignof_input_message;
 	  size_t n_output_fields;
 	  RoscoMessageTypeField *output_fields;
-	  size_t sizeof_output_message;
+	  size_t sizeof_output_message, alignof_output_message;
 
           const uint8_t *end_minusminusminus;
           const uint8_t *minusminusminus = find_minusminusminus_sep (content_size, contents, &end_minusminusminus);
@@ -1101,6 +1118,7 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 						 filename, 1,
 						 &n_input_fields, &input_fields,
 						 &sizeof_input_message,
+						 &alignof_input_message,
 						 error))
 	    { 
 	      dsk_free (contents);
@@ -1117,6 +1135,7 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 						 filename, response_line_no,
 						 &n_output_fields, &output_fields,
 						 &sizeof_output_message,
+						 &alignof_output_message,
 						 error))
 	    { 
 	      dsk_free (contents);
@@ -1127,36 +1146,36 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 	  RoscoServiceType *rv = DSK_NEW0 (RoscoServiceType);
           rv->is_static = DSK_FALSE;
           rv->name = dsk_strdup (normalized_name);
-	  rv->cname = message_name_to_cname (normalized_name);
+	  rv->cname = name_to_cname (normalized_name);
 
 	  RoscoMessageType *input_mt = DSK_NEW0 (RoscoMessageType);
           char *input_normalized_name = dsk_strdup_printf("%s/Request", normalized_name);
 	  input_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-	  input_mt->base.cname = message_name_to_cname (input_normalized_name);
+	  input_mt->base.cname = name_to_cname (input_normalized_name);
 	  input_mt->base.name = input_normalized_name; /* takes ownership */
+          setup_basename (&input_mt->base);
 	  input_mt->base.func_prefix_name = message_name_to_func_prefix (input_normalized_name);
-	  input_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
-	  input_mt->base.alignof_ctype = alignof (RoscoMessage *);
+	  input_mt->base.sizeof_ctype = sizeof_input_message;
+	  input_mt->base.alignof_ctype = alignof_input_message;
 	  input_mt->base.serialize = message_serialize;
 	  input_mt->base.deserialize = message_deserialize;
 	  input_mt->n_fields = n_input_fields;
 	  input_mt->fields = input_fields;
-	  input_mt->sizeof_message = sizeof_input_message;
           rv->input = input_mt;
 
 	  RoscoMessageType *output_mt = DSK_NEW0 (RoscoMessageType);
           char *output_normalized_name = dsk_strdup_printf("%s/Response", normalized_name);
 	  output_mt->base.type = ROSCO_BUILTIN_TYPE_MESSAGE;
-	  output_mt->base.cname = message_name_to_cname (output_normalized_name);
 	  output_mt->base.name = output_normalized_name; /* takes ownership */
+	  output_mt->base.cname = name_to_cname (output_normalized_name);
+          setup_basename (&output_mt->base);
 	  output_mt->base.func_prefix_name = message_name_to_func_prefix (output_normalized_name);
-	  output_mt->base.sizeof_ctype = sizeof (RoscoMessage *);
-	  output_mt->base.alignof_ctype = alignof (RoscoMessage *);
+	  output_mt->base.sizeof_ctype = sizeof_output_message;
+	  output_mt->base.alignof_ctype = alignof_output_message;
 	  output_mt->base.serialize = message_serialize;
 	  output_mt->base.deserialize = message_deserialize;
 	  output_mt->n_fields = n_output_fields;
 	  output_mt->fields = output_fields;
-	  output_mt->sizeof_message = sizeof_output_message;
           rv->output = output_mt;
 
 	  rv_stype = type_context_register_service (context, rv);
