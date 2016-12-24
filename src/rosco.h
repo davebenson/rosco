@@ -6,3 +6,4 @@
 #include "rosco-serialization-functions.h"
 #include "rosco-type-system.h"
 #include "rosco-xmlrpc-server.h"
+#include "rosco-machgen.h"
