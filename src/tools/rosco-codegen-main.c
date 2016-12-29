@@ -93,17 +93,19 @@ generate_message_type (RoscoMessageType *type,
   
   dsk_buffer_printf (hcode,
     "void\n"
-    "%s__serialize   (const %s *value,\n"
-    "%*s              DskBuffer *target);\n"
+    "%*s__serialize   (const %s *value,\n"
+    "%*s               DskBuffer *target);\n"
     "dsk_boolean\n"
-    "%s__deserialize (DskBuffer *buffer,\n"
-    "%*s              %s *out);\n",
-    type->base.func_prefix_name,
+    "%*s__deserialize (DskBuffer *buffer,\n"
+    "%*s               %s *out,\n"
+    "%*s               DskError **error);\n",
+    0, type->base.func_prefix_name,
     type->base.cname,
     (int) strlen (type->base.func_prefix_name), "",
-    type->base.func_prefix_name,
+    0, type->base.func_prefix_name,
     (int) strlen (type->base.func_prefix_name), "",
-    type->base.cname
+    type->base.cname,
+    (int) strlen (type->base.func_prefix_name), ""
   );
 
   // C File:  define RoscoMessageType

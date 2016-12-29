@@ -15,15 +15,6 @@ typedef struct RoscoTypeContextRecGuard RoscoTypeContextRecGuard;
 #include "dsk/dsk.h"
 #include <unistd.h>
 
-typedef struct RoscoTime
-{
-  uint32_t secs, nsecs;
-} RoscoTime;
-typedef struct RoscoDuration
-{
-  int32_t secs, nsecs;
-} RoscoDuration;
-
 
 typedef enum
 {
@@ -115,7 +106,6 @@ struct RoscoMessageTypeField
 struct RoscoMessage
 {
   RoscoMessageType *message_type;
-  unsigned ref_count;
 };
 
 
@@ -165,5 +155,19 @@ RoscoServiceType    *rosco_type_context_get_service(RoscoTypeContext    *context
                                                  DskError           **error);
 void                 rosco_type_context_destroy (RoscoTypeContext    *context);
 
+RoscoType *rosco_bool__get_type(void);
+RoscoType *rosco_uint8__get_type(void);
+RoscoType *rosco_int8__get_type(void);
+RoscoType *rosco_uint16__get_type(void);
+RoscoType *rosco_int16__get_type(void);
+RoscoType *rosco_uint32__get_type(void);
+RoscoType *rosco_int32__get_type(void);
+RoscoType *rosco_uint64__get_type(void);
+RoscoType *rosco_int64__get_type(void);
+RoscoType *rosco_float32__get_type(void);
+RoscoType *rosco_float64__get_type(void);
+RoscoType *rosco_string__get_type(void);
+RoscoType *rosco_time__get_type(void);
+RoscoType *rosco_duration__get_type(void);
 
 #endif

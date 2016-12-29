@@ -113,7 +113,8 @@ src/dsk/dsk-byte-undoubler.c \
 src/dsk/dsk-udp-socket.c \
 src/dsk/dsk-path.c \
 src/dsk/dsk-quote-printable.c \
-src/rosco-type-system.c
+src/rosco-type-system.c \
+src/rosco-machgen.c
 
 bin_PROGRAMS = rosco-codegen
 rosco_codegen_SOURCES = \

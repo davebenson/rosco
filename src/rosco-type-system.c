@@ -50,9 +50,9 @@ struct RoscoTypeContextRecGuard {
   sizeof(c_type),                                     \
   alignof(c_type),                                    \
   #c_type,                                            \
-  rosco_type__serialize__##name,                      \
-  rosco_type__deserialize__##name,                    \
-  rosco_type__destruct__##name,                       \
+  func_prefix ## __serialize_f,                       \
+  func_prefix ## __deserialize_f,                     \
+  func_prefix ## __destruct_f,                        \
   NULL,                                               \
   0,                                                  \
   NULL                                                \
@@ -66,342 +66,244 @@ struct RoscoTypeContextRecGuard {
       }                                                             \
   }while(0)
 
-static void
-rosco_type__destruct__no_op (RoscoType *type, void *data)
+#define DECLARE_SERIALIZE_FUNC(func_name)      \
+static dsk_boolean                             \
+func_name (RoscoType         *type,            \
+           const void        *ptr_value,       \
+           DskBuffer         *out,             \
+           DskError         **error)
+#define DECLARE_DESERIALIZE_FUNC(func_name)    \
+static dsk_boolean                             \
+func_name (RoscoType         *type,            \
+           DskBuffer         *in_out,          \
+           void              *ptr_value_out,   \
+           DskError         **error)
+
+DECLARE_SERIALIZE_FUNC(rosco_bool__serialize_f)
+{ 
+  (void)type;
+  return rosco_bool__serialize(* (rosco_bool *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_bool__deserialize_f)
 {
   (void)type;
-  (void)data;
+  return rosco_bool__deserialize(in_out, (rosco_bool *) ptr_value_out, error);
 }
 
-static dsk_boolean
-rosco_type__serialize__bool(RoscoType *type,
-		            const void *ptr_value,
-		            DskBuffer *out,
-		            DskError **error)
+#define rosco_bool__destruct_f NULL
+
+static RoscoType rosco_bool__type = DEFINE_ROSCO_TYPE(BOOL, rosco_bool, bool, rosco_bool);
+
+RoscoType *rosco_bool__get_type()
+{
+  return &rosco_bool__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_uint8__serialize_f)
 {
   (void) type;
-  uint8_t v = * (const uint8_t *) ptr_value;
-  if (v > 1)
-    {
-      dsk_set_error (error, "bool serialize: bool value must be 0 or 1");
-      return DSK_FALSE;
-    }
-  dsk_buffer_append_byte (out, v);
-  return DSK_TRUE;
+  return rosco_uint8__serialize(* (uint8_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__bool(RoscoType *type,
-			      DskBuffer *in,
-			      void        *ptr_value_out,
-			      DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_uint8__deserialize_f)
 {
   (void) type;
-  DESERIALIZE_CHECK_MIN_SIZE("bool", in, 1, error);
-  uint8_t v = dsk_buffer_read_byte (in);
-  if (v > 1)
-    {
-      dsk_set_error (error, "bool deserialize: bool value must be 0 or 1");
-      return DSK_FALSE;
-    }
-  * (uint8_t *) ptr_value_out = v;
-  return DSK_TRUE;
+  return rosco_uint8__deserialize (in_out, ptr_value_out, error);
 }
-#define rosco_type__destruct__bool rosco_type__destruct__no_op
-static RoscoType rosco_type__bool = DEFINE_ROSCO_TYPE(BOOL, rosco_bool, bool, rosco_bool);
+#define rosco_uint8__destruct_f NULL
+static RoscoType rosco_uint8__type = DEFINE_ROSCO_TYPE(UINT8, uint8_t, uint8, rosco_uint8);
+RoscoType *rosco_uint8__get_type()
+{
+  return &rosco_uint8__type;
+}
 
-static dsk_boolean
-rosco_type__serialize__uint8(RoscoType *type,
-		             const void *ptr_value,
-		             DskBuffer *out,
-		             DskError **error)
+DECLARE_SERIALIZE_FUNC(rosco_int8__serialize_f)
 {
   (void) type;
-  (void) error;
-  dsk_buffer_append_byte (out, * (const uint8_t *) ptr_value);
-  return DSK_TRUE;
+  return rosco_int8__serialize(* (int8_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__uint8(RoscoType *type,
-			       DskBuffer *in,
-			       void        *ptr_value_out,
-			       DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_int8__deserialize_f)
 {
   (void) type;
-  /* note: use type->name so that the same function works for signed int8 */
-  DESERIALIZE_CHECK_MIN_SIZE(type->name, in, 1, error);
-  * (uint8_t *) ptr_value_out = (uint8_t) dsk_buffer_read_byte (in);
-  return DSK_TRUE;
+  return rosco_int8__deserialize (in_out, ptr_value_out, error);
 }
-#define rosco_type__destruct__uint8 rosco_type__destruct__no_op
-static RoscoType rosco_type__uint8 = DEFINE_ROSCO_TYPE(UINT8, uint8_t, uint8, rosco_uint8);
+#define rosco_int8__destruct_f NULL
+static RoscoType rosco_int8__type = DEFINE_ROSCO_TYPE(INT8, int8_t, int8, rosco_int8);
+RoscoType *rosco_int8__get_type()
+{
+  return &rosco_int8__type;
+}
 
-#define rosco_type__serialize__int8 rosco_type__serialize__uint8
-#define rosco_type__deserialize__int8 rosco_type__deserialize__uint8
-#define rosco_type__destruct__int8 rosco_type__destruct__no_op
-static RoscoType rosco_type__int8 = DEFINE_ROSCO_TYPE(INT8, int8_t, int8, rosco_int8);
-
-static dsk_boolean
-rosco_type__serialize__uint16(RoscoType *type,
-		              const void *ptr_value,
-		              DskBuffer *out,
-		              DskError **error)
+DECLARE_SERIALIZE_FUNC(rosco_uint16__serialize_f)
 {
   (void) type;
-  (void) error;
-  uint16_t v = * (const uint16_t *) ptr_value;
-  uint8_t data[2] = { v & 0xff, v >> 8 };   /* little-endian */
-  dsk_buffer_append (out, 2, data);
-  return DSK_TRUE;
+  return rosco_uint16__serialize(* (uint16_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__uint16(RoscoType *type,
-			        DskBuffer *in,
-			        void        *ptr_value_out,
-			        DskError **error)
-{
-  DESERIALIZE_CHECK_MIN_SIZE(type->name, in, 2, error);
-  uint8_t buf[2];
-  dsk_buffer_read (in, 2, buf);
-  uint16_t v = (uint16_t)(buf[0]) | ((uint16_t)(buf[1]) << 8) ;
-  * (uint16_t *) ptr_value_out = v;
-  return DSK_TRUE;
-}
-#define rosco_type__destruct__uint16 rosco_type__destruct__no_op
-static RoscoType rosco_type__uint16 = DEFINE_ROSCO_TYPE(UINT16, uint16_t, uint16, rosco_uint16);
-
-#define rosco_type__serialize__int16 rosco_type__serialize__uint16
-#define rosco_type__deserialize__int16 rosco_type__deserialize__uint16
-#define rosco_type__destruct__int16 rosco_type__destruct__no_op
-static RoscoType rosco_type__int16 = DEFINE_ROSCO_TYPE(INT16, int16_t, int16, rosco_int16);
-static dsk_boolean
-rosco_type__serialize__uint32(RoscoType *type,
-		              const void *ptr_value,
-		              DskBuffer *out,
-		              DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_uint16__deserialize_f)
 {
   (void) type;
-  (void) error;
-  uint32_t v = * (const uint32_t *) ptr_value;
-  uint8_t data[4] = { UINT32_TO_UINT8LE_ARRAY (v) };
-  dsk_buffer_append (out, 4, data);
-  return DSK_TRUE;
+  return rosco_uint16__deserialize (in_out, ptr_value_out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__uint32(RoscoType *type,
-			        DskBuffer *in,
-			        void        *ptr_value_out,
-			        DskError **error)
+#define rosco_uint16__destruct_f NULL
+static RoscoType rosco_uint16__type = DEFINE_ROSCO_TYPE(UINT16, uint16_t, uint16, rosco_uint16);
+RoscoType *rosco_uint16__get_type()
 {
-  DESERIALIZE_CHECK_MIN_SIZE(type->name, in, 4, error);
-  uint8_t buf[4];
-  dsk_buffer_read (in, 4, buf);
-  uint32_t v =  (uint32_t)(buf[0])
-             | ((uint32_t)(buf[1]) << 8)
-             | ((uint32_t)(buf[2]) << 16)
-             | ((uint32_t)(buf[3]) << 24);
-  * (uint32_t *) ptr_value_out = v;
-  return DSK_TRUE;
+  return &rosco_uint16__type;
 }
-#define rosco_type__destruct__uint32 rosco_type__destruct__no_op
-static RoscoType rosco_type__uint32 = DEFINE_ROSCO_TYPE(UINT32, uint32_t, uint32, rosco_uint32);
 
-#define rosco_type__serialize__int32 rosco_type__serialize__uint32
-#define rosco_type__deserialize__int32 rosco_type__deserialize__uint32
-#define rosco_type__destruct__int32 rosco_type__destruct__no_op
-static RoscoType rosco_type__int32 = DEFINE_ROSCO_TYPE(INT32, int32_t, int32, rosco_int32);
-
-static dsk_boolean
-rosco_type__serialize__uint64(RoscoType *type,
-		              const void *ptr_value,
-		              DskBuffer *out,
-		              DskError **error)
+DECLARE_SERIALIZE_FUNC(rosco_int16__serialize_f)
 {
   (void) type;
-  (void) error;
-  uint64_t v = * (const uint64_t *) ptr_value;
-  uint8_t data[8] = { v & 0xff, v >> 8, v >> 16, v >> 24,
-                      v >> 32, v >> 40, v >> 48, v >> 54 };
-  dsk_buffer_append (out, 8, data);
-  return DSK_TRUE;
+  return rosco_int16__serialize(* (int16_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__uint64(RoscoType *type,
-			        DskBuffer *in,
-			        void        *ptr_value_out,
-			        DskError **error)
-{
-  DESERIALIZE_CHECK_MIN_SIZE(type->name, in, 8, error);
-  uint8_t buf[8];
-  dsk_buffer_read (in, 8, buf);
-  uint64_t v =  (uint64_t)(buf[0])
-             | ((uint64_t)(buf[1]) << 8)
-             | ((uint64_t)(buf[2]) << 16)
-             | ((uint64_t)(buf[3]) << 24)
-             | ((uint64_t)(buf[4]) << 32)
-             | ((uint64_t)(buf[5]) << 40)
-             | ((uint64_t)(buf[6]) << 48)
-             | ((uint64_t)(buf[7]) << 54);
-  * (uint64_t *) ptr_value_out = v;
-  return DSK_TRUE;
-}
-#define rosco_type__destruct__uint64 rosco_type__destruct__no_op
-static RoscoType rosco_type__uint64 = DEFINE_ROSCO_TYPE(UINT64, uint64_t, uint64, rosco_uint64);
-
-#define rosco_type__serialize__int64 rosco_type__serialize__uint64
-#define rosco_type__deserialize__int64 rosco_type__deserialize__uint64
-#define rosco_type__destruct__int64 rosco_type__destruct__no_op
-static RoscoType rosco_type__int64 = DEFINE_ROSCO_TYPE(INT64, int64_t, int64, rosco_int64);
-
-#define rosco_type__serialize__float32 rosco_type__serialize__uint32
-#define rosco_type__deserialize__float32 rosco_type__deserialize__uint32
-#define rosco_type__destruct__float32 rosco_type__destruct__no_op
-static RoscoType rosco_type__float32 = DEFINE_ROSCO_TYPE(FLOAT32, float, float32, rosco_float32);
-#define rosco_type__serialize__float64 rosco_type__serialize__uint64
-#define rosco_type__deserialize__float64 rosco_type__deserialize__uint64
-#define rosco_type__destruct__float64 rosco_type__destruct__no_op
-static RoscoType rosco_type__float64 = DEFINE_ROSCO_TYPE(FLOAT64, double, float64, rosco_float64);
-
-static dsk_boolean
-rosco_type__serialize__string(RoscoType *type,
-		              const void *ptr_value,
-		              DskBuffer *out,
-		              DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_int16__deserialize_f)
 {
   (void) type;
-  (void) error;
-  const char *str = * (const char **) ptr_value;
-  unsigned len = strlen (str);
-  uint8_t len_enc[4] = {UINT32_TO_UINT8LE_ARRAY(len)};
-  dsk_buffer_append (out, 4, len_enc);
-  dsk_buffer_append (out, len, str);
-  return DSK_TRUE;
+  return rosco_int16__deserialize (in_out, ptr_value_out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__string(RoscoType *type,
-			        DskBuffer *in,
-			        void        *ptr_value_out,
-			        DskError **error)
+#define rosco_int16__destruct_f NULL
+static RoscoType rosco_int16__type = DEFINE_ROSCO_TYPE(INT16, int16_t, int16, rosco_int16);
+RoscoType *rosco_int16__get_type()
 {
-  DESERIALIZE_CHECK_MIN_SIZE (type->name, in, 4, error);
-  uint8_t header[4];
-  dsk_buffer_read (in, 4, header);
-  uint32_t len = ((uint32_t)header[0])
-               | ((uint32_t)header[1] << 8)
-               | ((uint32_t)header[2] << 16)
-               | ((uint32_t)header[3] << 24);
-  if (in->size < len)
-    {
-      dsk_set_error (error, "%s deserialize: end-of-data", type->name);
-      return DSK_FALSE;
-    }
-  char *str = dsk_malloc (len + 1);
-  dsk_buffer_read (in, len, str);
-  str[len] = 0;
-  * (char **) ptr_value_out = str;
-  return DSK_TRUE;
+  return &rosco_int16__type;
 }
-static void
-rosco_type__destruct__string (RoscoType *type, void *ptr_data)
-{
-  (void)type;
-  dsk_free (*(char**)ptr_data);
-}
-static RoscoType rosco_type__string = DEFINE_ROSCO_TYPE(STRING, char *, string, rosco_string);
 
-static dsk_boolean
-rosco_type__serialize__time(RoscoType *type,
-		            const void *ptr_value,
-		            DskBuffer *out,
-		            DskError **error)
+DECLARE_SERIALIZE_FUNC(rosco_uint32__serialize_f)
 {
   (void) type;
-  (void) error;
-  RoscoTime time = * (const RoscoTime *) ptr_value;
-  uint8_t enc[8] = {
-    UINT32_TO_UINT8LE_ARRAY(time.secs),
-    UINT32_TO_UINT8LE_ARRAY(time.nsecs)
-  };
-  dsk_buffer_append (out, 8, enc);
-  return DSK_TRUE;
+  return rosco_uint32__serialize(* (uint32_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__time(RoscoType *type,
-			        DskBuffer *in,
-			        void        *ptr_value_out,
-			        DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_uint32__deserialize_f)
 {
   (void) type;
-  DESERIALIZE_CHECK_MIN_SIZE (type->name, in, 8, error);
-  uint8_t tmp[8];
-  dsk_buffer_read (in, 8, tmp);
-  RoscoTime *out = ptr_value_out;
-  out->secs  = ((uint32_t)tmp[0])
-             | ((uint32_t)tmp[1] << 8)
-             | ((uint32_t)tmp[2] << 16)
-             | ((uint32_t)tmp[3] << 24);
-  out->nsecs = ((uint32_t)tmp[4])
-             | ((uint32_t)tmp[5] << 8)
-             | ((uint32_t)tmp[6] << 16)
-             | ((uint32_t)tmp[7] << 24);
-
-  // normalize the duration so that 0 <= nsecs < BILLION
-  if (DSK_UNLIKELY (out->nsecs > BILLION))
-    {
-      unsigned s_in_n = out->nsecs / BILLION;
-      out->nsecs %= BILLION;
-      out->secs += s_in_n;
-    }
-  return DSK_TRUE;
+  return rosco_uint32__deserialize (in_out, ptr_value_out, error);
 }
-#define rosco_type__destruct__time rosco_type__destruct__no_op
-static RoscoType rosco_type__time = DEFINE_ROSCO_TYPE(TIME, RoscoTime, time, rosco_time);
+#define rosco_uint32__destruct_f NULL
+static RoscoType rosco_uint32__type = DEFINE_ROSCO_TYPE(UINT32, uint32_t, uint32, rosco_uint32);
+RoscoType *rosco_uint32__get_type()
+{
+  return &rosco_uint32__type;
+}
 
-static dsk_boolean
-rosco_type__serialize__duration(RoscoType *type,
-		                const void *ptr_value,
-		                DskBuffer *out,
-		                DskError **error)
+DECLARE_SERIALIZE_FUNC(rosco_int32__serialize_f)
 {
   (void) type;
-  (void) error;
-  RoscoDuration duration = * (const RoscoDuration *) ptr_value;
-  uint8_t enc[8] = {
-    UINT32_TO_UINT8LE_ARRAY(duration.secs),
-    UINT32_TO_UINT8LE_ARRAY(duration.nsecs)
-  };
-  dsk_buffer_append (out, 8, enc);
-  return DSK_TRUE;
+  return rosco_int32__serialize(* (int32_t *) ptr_value, out, error);
 }
-static dsk_boolean
-rosco_type__deserialize__duration(RoscoType *type,
-			          DskBuffer *in,
-			          void        *ptr_value_out,
-			          DskError **error)
+DECLARE_DESERIALIZE_FUNC(rosco_int32__deserialize_f)
 {
-  DESERIALIZE_CHECK_MIN_SIZE (type->name, in, 8, error);
-  uint8_t tmp[8];
-  dsk_buffer_read (in, 8, tmp);
-  RoscoTime *out = ptr_value_out;
-  out->secs  = ((int32_t)tmp[0])
-             | ((int32_t)tmp[1] << 8)
-             | ((int32_t)tmp[2] << 16)
-             | ((int32_t)tmp[3] << 24);
-  out->nsecs = ((int32_t)tmp[4])
-             | ((int32_t)tmp[5] << 8)
-             | ((int32_t)tmp[6] << 16)
-             | ((int32_t)tmp[7] << 24);
-
-  // normalize the duration so that 0 <= nsecs < BILLION
-  if (DSK_UNLIKELY (out->nsecs > BILLION))
-    {
-      unsigned s_in_n = out->nsecs / BILLION;
-      out->nsecs %= BILLION;
-      out->secs += s_in_n;
-    }
-  return DSK_TRUE;
+  (void) type;
+  return rosco_int32__deserialize (in_out, ptr_value_out, error);
 }
-#define rosco_type__destruct__duration rosco_type__destruct__no_op
-static RoscoType rosco_type__duration = DEFINE_ROSCO_TYPE(DURATION, RoscoDuration, duration, rosco_duration);
+#define rosco_int32__destruct_f NULL
+static RoscoType rosco_int32__type = DEFINE_ROSCO_TYPE(INT32, int32_t, int32, rosco_int32);
+RoscoType *rosco_int32__get_type()
+{
+  return &rosco_int32__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_uint64__serialize_f)
+{
+  (void) type;
+  return rosco_uint64__serialize(* (uint64_t *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_uint64__deserialize_f)
+{
+  (void) type;
+  return rosco_uint64__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_uint64__destruct_f NULL
+static RoscoType rosco_uint64__type = DEFINE_ROSCO_TYPE(UINT64, uint64_t, uint64, rosco_uint64);
+RoscoType *rosco_uint64__get_type()
+{
+  return &rosco_uint64__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_int64__serialize_f)
+{
+  (void) type;
+  return rosco_int64__serialize(* (int64_t *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_int64__deserialize_f)
+{
+  (void) type;
+  return rosco_int64__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_int64__destruct_f NULL
+static RoscoType rosco_int64__type = DEFINE_ROSCO_TYPE(INT64, int64_t, int64, rosco_int64);
+RoscoType *rosco_int64__get_type()
+{
+  return &rosco_int64__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_float32__serialize_f)
+{
+  (void) type;
+  return rosco_float32__serialize(* (float *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_float32__deserialize_f)
+{
+  (void) type;
+  return rosco_float32__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_float32__destruct_f NULL
+static RoscoType rosco_float32__type = DEFINE_ROSCO_TYPE(FLOAT32, float, float32, rosco_float32);
+RoscoType *rosco_float32__get_type()
+{
+  return &rosco_float32__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_float64__serialize_f)
+{
+  (void) type;
+  return rosco_float64__serialize(* (double *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_float64__deserialize_f)
+{
+  (void) type;
+  return rosco_float64__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_float64__destruct_f NULL
+static RoscoType rosco_float64__type = DEFINE_ROSCO_TYPE(FLOAT64, float, float64, rosco_float64);
+RoscoType *rosco_float64__get_type()
+{
+  return &rosco_float64__type;
+}
+
+
+DECLARE_SERIALIZE_FUNC(rosco_duration__serialize_f)
+{
+  (void) type;
+  return rosco_duration__serialize (* (RoscoDuration *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_duration__deserialize_f)
+{
+  (void) type;
+  return rosco_duration__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_duration__destruct_f NULL
+static RoscoType rosco_duration__type = DEFINE_ROSCO_TYPE(DURATION, RoscoDuration, duration, rosco_duration);
+RoscoType *rosco_duration__get_type()
+{
+  return &rosco_duration__type;
+}
+
+DECLARE_SERIALIZE_FUNC(rosco_time__serialize_f)
+{
+  (void) type;
+  return rosco_time__serialize (* (RoscoTime *) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_time__deserialize_f)
+{
+  (void) type;
+  return rosco_time__deserialize (in_out, ptr_value_out, error);
+}
+#define rosco_time__destruct_f NULL
+static RoscoType rosco_time__type = DEFINE_ROSCO_TYPE(TIME, RoscoTime, time, rosco_time);
+RoscoType *rosco_time__get_type()
+{
+  return &rosco_time__type;
+}
+
 static RoscoTypeContextType *
 type_context_register_type (RoscoTypeContext *ctx, RoscoType *type)
 {
@@ -426,20 +328,20 @@ rosco_type_context_new     (unsigned             n_dirs,
   rv->services_by_name = NULL;
 
   // register base types
-  type_context_register_type (rv, &rosco_type__bool);
-  type_context_register_type (rv, &rosco_type__uint8);
-  type_context_register_type (rv, &rosco_type__int8);
-  type_context_register_type (rv, &rosco_type__uint16);
-  type_context_register_type (rv, &rosco_type__int16);
-  type_context_register_type (rv, &rosco_type__uint32);
-  type_context_register_type (rv, &rosco_type__int32);
-  type_context_register_type (rv, &rosco_type__uint64);
-  type_context_register_type (rv, &rosco_type__int64);
-  type_context_register_type (rv, &rosco_type__float32);
-  type_context_register_type (rv, &rosco_type__float64);
-  type_context_register_type (rv, &rosco_type__string);
-  type_context_register_type (rv, &rosco_type__time);
-  type_context_register_type (rv, &rosco_type__duration);
+  type_context_register_type (rv, rosco_bool__get_type());
+  type_context_register_type (rv, rosco_uint8__get_type());
+  type_context_register_type (rv, rosco_int8__get_type());
+  type_context_register_type (rv, rosco_uint16__get_type());
+  type_context_register_type (rv, rosco_int16__get_type());
+  type_context_register_type (rv, rosco_uint32__get_type());
+  type_context_register_type (rv, rosco_int32__get_type());
+  type_context_register_type (rv, rosco_uint64__get_type());
+  type_context_register_type (rv, rosco_int64__get_type());
+  type_context_register_type (rv, rosco_float32__get_type());
+  type_context_register_type (rv, rosco_float64__get_type());
+  type_context_register_type (rv, rosco_string__get_type());
+  type_context_register_type (rv, rosco_time__get_type());
+  type_context_register_type (rv, rosco_duration__get_type());
 
   return rv;
 }
@@ -717,7 +619,6 @@ message_deserialize (RoscoType   *type,
   RoscoMessageType *mtype = (RoscoMessageType *) type;
   RoscoMessage *msg = dsk_malloc (mtype->sizeof_message);
   msg->message_type = mtype;
-  msg->ref_count = 1;
   for (size_t i = 0; i < mtype->n_fields; i++)
     {
       RoscoType *ftype = mtype->fields[i].type;
