@@ -90,22 +90,83 @@ generate_message_type (RoscoMessageType *type,
       );
     }
   dsk_buffer_append_string (hcode, "};\n\n");
+
+  int func_prefix_name_len = strlen (type->base.func_prefix_name);
   
+#if 0
   dsk_buffer_printf (hcode,
-    "void\n"
+    "dsk_boolean\n"
     "%*s__serialize   (const %s *value,\n"
-    "%*s               DskBuffer *target);\n"
+    "%*s               DskBuffer *target,\n"
+    "%*s               DskError **error);\n"
     "dsk_boolean\n"
     "%*s__deserialize (DskBuffer *buffer,\n"
     "%*s               %s *out,\n"
     "%*s               DskError **error);\n",
     0, type->base.func_prefix_name,
     type->base.cname,
-    (int) strlen (type->base.func_prefix_name), "",
+    func_prefix_name_len, "",
+    func_prefix_name_len, "",
     0, type->base.func_prefix_name,
-    (int) strlen (type->base.func_prefix_name), "",
+    func_prefix_name_len, "",
     type->base.cname,
-    (int) strlen (type->base.func_prefix_name), ""
+    func_prefix_name_len, ""
+  );
+#endif
+
+  
+  dsk_buffer_printf (ccode,
+    "static dsk_boolean\n"
+    "%*s__serialize_f   (RoscoType         *type,\n"
+    "%*s                 const void        *ptr_value,\n"
+    "%*s                 DskBuffer         *out,\n"
+    "%*s                 DskError         **error)\n"
+    "{\n"
+    "  assert(type == %s__get_type());\n"
+    "  assert(((RoscoMessage *) ptr_value)->message_type == (RoscoMessageType *) type);\n"
+    "  return %s__serialize (ptr_value, out, error);\n"
+    "}\n\n",
+    0, type->base.func_prefix_name,
+    func_prefix_name_len, "",
+    func_prefix_name_len, "",
+    func_prefix_name_len, "",
+    type->base.func_prefix_name,
+    type->base.func_prefix_name
+  );
+
+  dsk_buffer_printf (ccode,
+    "static dsk_boolean\n"
+    "%*s__deserialize_f   (RoscoType         *type,\n"
+    "%*s                   DskBuffer         *in,\n"
+    "%*s                   void              *ptr_value,\n"
+    "%*s                   DskError         **error)\n"
+    "{\n"
+    "  assert(type == %s__get_type());\n"
+    "  return %s__deserialize (in, ptr_value, error);\n"
+    "}\n\n",
+    0, type->base.func_prefix_name,
+    func_prefix_name_len, "",
+    func_prefix_name_len, "",
+    func_prefix_name_len, "",
+    type->base.func_prefix_name,
+    type->base.func_prefix_name
+  );
+
+  if (type->base.destruct == NULL)
+    dsk_buffer_printf (ccode, "#define %s__destruct_f NULL\n", type->base.func_prefix_name);
+  else
+    dsk_buffer_printf (ccode,
+    "static void\n"
+    "%*s__destruct_f   (RoscoType         *type,\n"
+    "%*s                void              *ptr_value)\n"
+    "{\n"
+    "  assert(type == %s__get_type());\n"
+    "  return %s__deserialize (in, ptr_value, error);\n"
+    "}\n\n",
+    0, type->base.func_prefix_name,
+    func_prefix_name_len, "",
+    type->base.func_prefix_name,
+    type->base.func_prefix_name
   );
 
   // C File:  define RoscoMessageType
@@ -138,9 +199,9 @@ generate_message_type (RoscoMessageType *type,
     "    sizeof(%s),\n"
     "    alignof(%s),\n"
     "    \"%s\",      /* c_input_arg_type */\n"
-    "    %s__serialize,\n"
-    "    %s__deserialize,\n"
-    "    %s__destruct,\n"
+    "    %s__serialize_f,\n"
+    "    %s__deserialize_f,\n"
+    "    %s__destruct_f,\n"
     "    NULL,    /* vararray_type */\n"
     "    0,    /* n_fixed_array_types */\n"
     "    NULL,    /* fixed_array_types */\n"
@@ -166,8 +227,8 @@ generate_message_type (RoscoMessageType *type,
   int func_prefix_len = strlen (type->base.func_prefix_name);
 
   // C File:  implement serialize/deserialize
-  dsk_buffer_printf (ccode,
-    "dsk_boolean\n"
+  dsk_buffer_printf (hcode,
+    "static inline dsk_boolean\n"
     "%s__serialize   (const %s *value,\n"
     "%*s              DskBuffer *target,\n"
     "%*s              DskError **error)\n"
@@ -180,7 +241,7 @@ generate_message_type (RoscoMessageType *type,
     {
       RoscoMessageTypeField *field = type->fields + i;
       RoscoType *ftype = field->type;
-      dsk_buffer_printf (ccode,
+      dsk_buffer_printf (hcode,
        "  if (!%s__serialize (%s(value->%s), target, error))\n"
        "    {\n"
        "      return DSK_FALSE;\n"
@@ -188,12 +249,58 @@ generate_message_type (RoscoMessageType *type,
        ftype->func_prefix_name, ftype->pass_by_ref ? "&" : "",
        field->name);
     }
-  dsk_buffer_printf(ccode,
+  dsk_buffer_printf(hcode,
     "  return DSK_TRUE;\n"
     "}\n"
   );
+  dsk_buffer_printf (hcode,
+    "static inline dsk_boolean\n"
+    "%*s__deserialize  (DskBuffer *in,\n"
+    "%*s                %s *out,\n"
+    "%*s                DskError **error)\n"
+    "{\n",
+    0, type->base.func_prefix_name,
+    func_prefix_len, "", type->base.cname,
+    func_prefix_len, "");
+  for (unsigned i = 0; i < type->n_fields; i++)
+    {
+      RoscoMessageTypeField *field = type->fields + i;
+      RoscoType *ftype = field->type;
+      dsk_buffer_printf (hcode,
+       "  if (!%s__deserialize (in, &(out->%s), error))\n"
+       "    {\n"
+       "      return DSK_FALSE;\n"
+       "    }\n",
+       ftype->func_prefix_name, field->name);
+    }
+  dsk_buffer_printf(hcode,
+    "  return DSK_TRUE;\n"
+    "}\n"
+  );
+  dsk_buffer_printf (hcode,
+    "static inline void\n"
+    "%s__destruct   (%s *value)\n"
+    "{\n",
+    type->base.func_prefix_name,
+    type->base.cname);
+  for (unsigned i = 0; i < type->n_fields; i++)
+    {
+      RoscoMessageTypeField *field = type->fields + i;
+      RoscoType *ftype = field->type;
+      if (ftype->destruct != NULL)
+        dsk_buffer_printf (hcode,
+           "  %s__destruct (%s(value->%s));\n",
+           ftype->func_prefix_name, ftype->pass_by_ref ? "&" : "",
+           field->name);
+    }
+  dsk_buffer_printf(hcode,
+    "}\n"
+  );
+  dsk_buffer_printf (hcode,
+    "RoscoType *%s__get_type();\n",
+    type->base.func_prefix_name);
   dsk_buffer_printf (ccode,
-    "RoscoType %s__get_type()\n"
+    "RoscoType *%s__get_type()\n"
     "{\n",
     type->base.func_prefix_name
   );
@@ -206,7 +313,7 @@ generate_message_type (RoscoMessageType *type,
       );
       for (unsigned i = 0; i < type->n_fields; i++)
         dsk_buffer_printf (ccode,
-          "      %s__fields[%u] = %s__get_type();\n",
+          "      %s__fields[%u].type = %s__get_type();\n",
           type->base.func_prefix_name,
           i,
           type->fields[i].type->func_prefix_name
@@ -216,7 +323,9 @@ generate_message_type (RoscoMessageType *type,
       );
     }
   dsk_buffer_printf (ccode,
-    "}\n"
+    "  return (RoscoType *) &%s__message_type;\n"
+    "}\n",
+    type->base.func_prefix_name
   );
 }
 

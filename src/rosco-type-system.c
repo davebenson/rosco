@@ -78,6 +78,10 @@ func_name (RoscoType         *type,            \
            DskBuffer         *in_out,          \
            void              *ptr_value_out,   \
            DskError         **error)
+#define DECLARE_DESTRUCT_FUNC(func_name)       \
+static void                                    \
+func_name (RoscoType         *type,            \
+           void              *ptr_value)
 
 DECLARE_SERIALIZE_FUNC(rosco_bool__serialize_f)
 { 
@@ -303,6 +307,27 @@ RoscoType *rosco_time__get_type()
 {
   return &rosco_time__type;
 }
+DECLARE_SERIALIZE_FUNC(rosco_string__serialize_f)
+{
+  (void) type;
+  return rosco_string__serialize (* (char **) ptr_value, out, error);
+}
+DECLARE_DESERIALIZE_FUNC(rosco_string__deserialize_f)
+{
+  (void) type;
+  return rosco_string__deserialize (in_out, ptr_value_out, error);
+}
+DECLARE_DESTRUCT_FUNC(rosco_string__destruct_f)
+{
+  (void) type;
+  return rosco_string__destruct (* (char **) ptr_value);
+}
+static RoscoType rosco_string__type = DEFINE_ROSCO_TYPE(STRING, char *, string, rosco_string);
+RoscoType *rosco_string__get_type()
+{
+  return &rosco_string__type;
+}
+
 
 static RoscoTypeContextType *
 type_context_register_type (RoscoTypeContext *ctx, RoscoType *type)

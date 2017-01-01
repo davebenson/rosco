@@ -1,5 +1,7 @@
 // functions primarily useful to the generated code.
 
+#include <string.h>
+
 void rosco_machgen_error_too_short (DskBuffer  *buf, 
                                     size_t      min_size,
                                     const char *type_name,
@@ -28,7 +30,7 @@ rosco_bool__serialize(rosco_bool value,
   dsk_buffer_append_byte (out, v);
   return DSK_TRUE;
 }
-static dsk_boolean
+static inline dsk_boolean
 rosco_bool__deserialize (DskBuffer *in,
                          rosco_bool        *ptr_value_out,
 			 DskError **error)
@@ -65,18 +67,20 @@ rosco_uint8__deserialize   (DskBuffer  *in,
     
 #define rosco_uint8__destruct(value)
 
-rosco_bool rosco_int8__serialize      (int8_t      value,
-                                       DskBuffer  *out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int8__serialize      (int8_t      value,
+                            DskBuffer  *out,
+                            DskError  **error)
 {
   (void) error;
   dsk_buffer_append_byte (out, (uint8_t) value);
   return DSK_TRUE;
 }
 
-rosco_bool rosco_int8__deserialize    (DskBuffer  *in,
-                                       int8_t     *value_out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int8__deserialize     (DskBuffer  *in,
+                             int8_t     *value_out,
+                             DskError  **error)
 {
   ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, 1, "int8", error);
   dsk_buffer_read (in, 1, value_out);
@@ -110,9 +114,10 @@ rosco_uint16__deserialize  (DskBuffer  *in,
     
 #define rosco_uint16__destruct(value)
 
-rosco_bool rosco_int16__serialize      (int16_t      value,
-                                       DskBuffer  *out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int16__serialize      (int16_t      value,
+                             DskBuffer  *out,
+                             DskError  **error)
 {
   (void) error;
   uint8_t tmp[2] = { (uint8_t) value, (uint8_t)(value >> 8) };
@@ -120,9 +125,10 @@ rosco_bool rosco_int16__serialize      (int16_t      value,
   return DSK_TRUE;
 }
 
-rosco_bool rosco_int16__deserialize    (DskBuffer *in,
-                                       int16_t    *value_out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int16__deserialize    (DskBuffer *in,
+                             int16_t    *value_out,
+                             DskError  **error)
 {
   ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, 2, "int16", error);
   uint8_t tmp[2];
@@ -164,9 +170,10 @@ rosco_uint32__deserialize  (DskBuffer  *in,
     
 #define rosco_uint32__destruct(value)
 
-rosco_bool rosco_int32__serialize     (int32_t     value,
-                                       DskBuffer  *out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int32__serialize     (int32_t     value,
+                            DskBuffer  *out,
+                            DskError  **error)
 {
   (void) error;
   uint8_t tmp[4] = { (uint8_t) value,
@@ -177,9 +184,10 @@ rosco_bool rosco_int32__serialize     (int32_t     value,
   return DSK_TRUE;
 }
 
-rosco_bool rosco_int32__deserialize    (DskBuffer *in,
-                                       int32_t    *value_out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int32__deserialize    (DskBuffer *in,
+                             int32_t    *value_out,
+                             DskError  **error)
 {
   ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, 4, "int32", error);
   uint8_t tmp[4];
@@ -232,9 +240,10 @@ rosco_uint64__deserialize  (DskBuffer  *in,
     
 #define rosco_uint64__destruct(value)
 
-rosco_bool rosco_int64__serialize     (int64_t     value,
-                                       DskBuffer  *out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int64__serialize      (int64_t     value,
+                             DskBuffer  *out,
+                             DskError  **error)
 {
   (void) error;
   uint8_t tmp[8] = { (uint8_t) value,
@@ -249,9 +258,10 @@ rosco_bool rosco_int64__serialize     (int64_t     value,
   return DSK_TRUE;
 }
 
-rosco_bool rosco_int64__deserialize    (DskBuffer *in,
-                                       int64_t    *value_out,
-                                       DskError  **error)
+static inline rosco_bool
+rosco_int64__deserialize    (DskBuffer *in,
+                             int64_t    *value_out,
+                             DskError  **error)
 {
   ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, 8, "int64", error);
   uint8_t tmp[8];
@@ -444,10 +454,42 @@ rosco_time__deserialize  (DskBuffer  *in,
 
 #define rosco_time__destruct(value)
 
-rosco_bool rosco_string__serialize    (const char *str,
-                                       DskBuffer  *out,
-                                       DskError  **error);
-rosco_bool rosco_string__deserialize  (DskBuffer  *in,
-                                       char      **str_out,
-                                       DskError  **error);
-rosco_bool rosco_string__destruct     (char       *str);
+static inline rosco_bool
+rosco_string__serialize    (const char *str,
+                            DskBuffer  *out,
+                            DskError  **error)
+{
+  uint32_t len = strlen (str);
+  uint8_t buf[4] = { (uint8_t) len,
+                     (uint8_t) (len >> 8),
+                     (uint8_t) (len >> 16),
+                     (uint8_t) (len >> 24) };
+  dsk_buffer_append (out, 4, buf);
+  dsk_buffer_append (out, len, (void*) str);
+  return DSK_TRUE;
+}
+
+static inline rosco_bool
+rosco_string__deserialize   (DskBuffer  *in,
+                             char      **str_out,
+                             DskError  **error)
+{
+  ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, 4, "string", error);
+  uint8_t buf[4];
+  dsk_buffer_read (in, 4, buf);
+  uint32_t len = ((uint32_t)buf[0])
+               | ((uint32_t)buf[1] << 8)
+               | ((uint32_t)buf[2] << 16)
+               | ((uint32_t)buf[3] << 24);
+  ROSCO_MACHGEN_CHECK_BUFFER_SIZE (in, len, "string", error);
+  *str_out = dsk_malloc (len + 1);
+  dsk_buffer_read (in, len, *str_out);
+  (*str_out)[len] = '\0';
+  return DSK_TRUE;
+}
+
+static inline void
+rosco_string__destruct     (char       *str)
+{
+  dsk_free (str);
+}
