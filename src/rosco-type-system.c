@@ -1085,6 +1085,7 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 	  input_mt->base.alignof_ctype = alignof_input_message;
 	  input_mt->base.serialize = message_serialize;
 	  input_mt->base.deserialize = message_deserialize;
+          input_mt->base.c_input_arg_type = dsk_strdup_printf ("const %s *", input_mt->base.cname);
 	  input_mt->n_fields = n_input_fields;
 	  input_mt->fields = input_fields;
           rv->input = input_mt;
@@ -1100,6 +1101,7 @@ rosco_type_context_get_service(RoscoTypeContext    *context,
 	  output_mt->base.alignof_ctype = alignof_output_message;
 	  output_mt->base.serialize = message_serialize;
 	  output_mt->base.deserialize = message_deserialize;
+          output_mt->base.c_input_arg_type = dsk_strdup_printf ("const %s *", output_mt->base.cname);
 	  output_mt->n_fields = n_output_fields;
 	  output_mt->fields = output_fields;
           rv->output = output_mt;

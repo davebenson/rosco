@@ -131,7 +131,7 @@ rosco_codegen_LDADD = \
 
 generated/rosco/messages/std_msgs/%.c generated/rosco/messages/std_msgs/%.h: msg/std_msgs/%.msg rosco-codegen
 	./rosco-codegen --src-dir=. --message=std_msgs/$* --dest=generated
-generated/rosco/messages/std_srvs/%.c generated/rosco/services/std_srvs/%.h: srv/std_srvs/%.srv rosco-codegen
+generated/rosco/services/std_srvs/%.c generated/rosco/services/std_srvs/%.h: srv/std_srvs/%.srv rosco-codegen
 	./rosco-codegen --src-dir=. --service=std_srvs/$* --dest=generated
 
 lib_LIBRARIES = librosco.a
@@ -142,4 +142,3 @@ generated/rosco/services/std_srvs/GetLoggers.c \
 src/rosco-node.c
 
 CLEANFILES = generated/rosco/messages/*/*.[ch] generated/rosco/services/*/*.[ch]
-	-rm -rf generated

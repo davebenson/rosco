@@ -1,8 +1,15 @@
 #include "../rosco-type-system.h"
 #include "../dsk/dsk.h"
 #include "../dsk/dsk-contained-array-macros.h"
+#include "../dsk/dsk-tmp-array-macros.h"
 #include <stdio.h>
 #include <string.h>
+
+struct NestedArraySpec
+{
+  RoscoType *base_type;
+  unsigned depth;
+};
 
 struct StrArray {
   DSK_CONTAINED_ARRAY_DECLARE (strs, char *);
@@ -449,12 +456,45 @@ int main(int argc, char **argv)
       service_types[i] = t;
     }
     
+  
   for (size_t i = 0; i < message_type_names.strs.length; i++)
     {
 dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.data[i]);
       DskBuffer h_code = DSK_BUFFER_INIT;
       DskBuffer c_code = DSK_BUFFER_INIT;
+      DSK_TMP_ARRAY_DECLARE(RoscoType *, used_array_types, 16);
       generate_preambles ("message", message_type_names.strs.data[i], &c_code, &h_code);
+      for (unsigned j = 0; j < message_types[i]->n_fields; j++)
+        {
+          unsigned rank = 0;
+          RoscoType *type = message_types[i]->fields[j].type;
+          while (type->type == ROSCO_BUILTIN_TYPE_ARRAY)
+            {
+              DSK_TMP_ARRAY_APPEND (used_array_types, type);
+              type = ((RoscoArrayType *) type)->element_type;
+            }
+        }
+      // sort/unique (by rank then ptr?)
+      if (used_array_types.n > 0)
+        {
+          qsort (...);
+          unsigned n = 1;
+          for (unsigned j = 1; j < used_array_types.n; j++)
+            if (used_array_types.data[j] != used_array_types.data[n-1])
+              used_array_types.data[n++] = used_array_types.data[j];
+          used_array_types.n = n;
+        }
+
+      for (unsigned j = 0; j < used_array_types.n; j++)
+        {
+          // generate serialize/deserialize/destruct/get_type
+          // each conditionalized appropriately
+          ...
+        }
+      
+
+      ... compute array types required
+      ... generate (with conditionals) those array types (only inline functions are needed, generic array serializers/deserializers are fine)
       generate_message_type (message_types[i], &c_code, &h_code);
       char *h_path = dsk_strdup_printf ("%s/rosco/messages/%s.h", h_dest_dir, message_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/rosco/messages/%s.c", c_dest_dir, message_type_names.strs.data[i]);
