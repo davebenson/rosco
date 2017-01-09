@@ -51,3 +51,6 @@
     name.data = name##__stack_allocation;                          \
     name.length = 0;                                               \
   }while(0)
+
+#define DSK_TMP_ARRAY_QSORT(name, compare_func)                    \
+  qsort(name.data, name.length, sizeof (*(name.data)), compare_func)

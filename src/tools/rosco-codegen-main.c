@@ -2,6 +2,7 @@
 #include "../dsk/dsk.h"
 #include "../dsk/dsk-contained-array-macros.h"
 #include "../dsk/dsk-tmp-array-macros.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -363,6 +364,30 @@ generate_preambles (const char *type_name,
   dsk_buffer_printf(c_code, "#include <rosco/%ss/%s.h>\n", type_name, name);
 }
 
+static inline unsigned get_array_depth (RoscoType *type)
+{
+  unsigned rv = 0;
+  while (type->type == ROSCO_BUILTIN_TYPE_ARRAY)
+    {
+      rv++;
+      type = ((RoscoArrayType*)type)->element_type;
+    }
+  return rv;
+}
+
+static int compare_ptype_by_rank (const void *a, const void *b)
+{
+  RoscoType *ta = * (RoscoType **) a;
+  RoscoType *tb = * (RoscoType **) b;
+  int da = get_array_depth (ta);
+  int db = get_array_depth (tb);
+  if (da < db) return -1;
+  if (da > db) return +1;
+  if (ta < tb) return -1;
+  if (ta > tb) return +1;
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   dsk_boolean all = DSK_FALSE;
@@ -475,21 +500,50 @@ dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.da
             }
         }
       // sort/unique (by rank then ptr?)
-      if (used_array_types.n > 0)
+      if (used_array_types.length > 0)
         {
-          qsort (...);
+          DSK_TMP_ARRAY_QSORT (used_array_types, compare_ptype_by_rank);
           unsigned n = 1;
-          for (unsigned j = 1; j < used_array_types.n; j++)
+          for (unsigned j = 1; j < used_array_types.length; j++)
             if (used_array_types.data[j] != used_array_types.data[n-1])
               used_array_types.data[n++] = used_array_types.data[j];
-          used_array_types.n = n;
+          used_array_types.length = n;
         }
 
-      for (unsigned j = 0; j < used_array_types.n; j++)
+      for (unsigned j = 0; j < used_array_types.length; j++)
         {
+          RoscoArrayType *arrtype = (RoscoArrayType *) used_array_types.data[j];
           // generate serialize/deserialize/destruct/get_type
           // each conditionalized appropriately
-          ...
+          char *uc_func_prefix = dsk_strdup (arrtype->base.func_prefix_name);
+          dsk_ascii_strup (uc_func_prefix);
+          /* note that we cannot use anything in the .c file, since
+           * that'll require linking issues. */
+          dsk_buffer_printf (&hcode,
+                             "#ifndef %s__IMPLEMENTED\n"
+                             "#define %s__IMPLEMENTED\n\n",
+                             uc_func_prefix,
+                             uc_func_prefix);
+          dsk_buffer_printf (&hcode,
+                             "struct %s {\n"
+                             "  size_t count;",
+                             arrtype->base.ctypename);
+          if (arrtype->length)
+            dsk_buffer_printf (&hcode,
+                               "       /* == %u */\n",
+                               (unsigned) arrtype->length);
+          else
+            dsk_buffer_printf (&hcode, "\n");
+          dsk_buffer_printf ("  %s *data;\n};\n", arrtype->element_type->ctypename);
+
+          ... serialize
+          ... deserialize
+          ... destruct
+
+          dsk_buffer_printf (&hcode,
+                             "\n#endif /* !%s__IMPLEMENTED */\n",
+                             uc_func_prefix);
+                    
         }
       
 
