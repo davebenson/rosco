@@ -1,5 +1,5 @@
 
-/* --- the low-level aspects of base-64 inclusion --- */
+/* --- the low-level aspects of base-64 encoding --- */
 
 /* Map from 0..63 as characters. */
 extern char dsk_base64_value_to_char[64];

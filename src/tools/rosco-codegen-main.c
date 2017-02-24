@@ -519,37 +519,39 @@ dsk_warning("generating message %u: %s", (unsigned)i, message_type_names.strs.da
           dsk_ascii_strup (uc_func_prefix);
           /* note that we cannot use anything in the .c file, since
            * that'll require linking issues. */
-          dsk_buffer_printf (&hcode,
+          dsk_buffer_printf (&h_code,
                              "#ifndef %s__IMPLEMENTED\n"
                              "#define %s__IMPLEMENTED\n\n",
                              uc_func_prefix,
                              uc_func_prefix);
-          dsk_buffer_printf (&hcode,
+          dsk_buffer_printf (&h_code,
                              "struct %s {\n"
                              "  size_t count;",
-                             arrtype->base.ctypename);
+                             arrtype->base.cname);
           if (arrtype->length)
-            dsk_buffer_printf (&hcode,
+            dsk_buffer_printf (&h_code,
                                "       /* == %u */\n",
                                (unsigned) arrtype->length);
           else
-            dsk_buffer_printf (&hcode, "\n");
-          dsk_buffer_printf ("  %s *data;\n};\n", arrtype->element_type->ctypename);
+            dsk_buffer_printf (&h_code, "\n");
+          dsk_buffer_printf (&h_code,
+                             "  %s *data;\n};\n",
+                             arrtype->element_type->cname);
 
-          ... serialize
-          ... deserialize
-          ... destruct
+          //... serialize
+          //... deserialize
+          //... destruct
 
-          dsk_buffer_printf (&hcode,
+          dsk_buffer_printf (&h_code,
                              "\n#endif /* !%s__IMPLEMENTED */\n",
                              uc_func_prefix);
                     
         }
       
 
-      ... compute array types required
-      ... generate (with conditionals) those array types (only inline functions are needed, generic array serializers/deserializers are fine)
-      generate_message_type (message_types[i], &c_code, &h_code);
+      //... compute array types required
+      //... generate (with conditionals) those array types (only inline functions are needed, generic array serializers/deserializers are fine)
+      //generate_message_type (message_types[i], &c_code, &h_code);
       char *h_path = dsk_strdup_printf ("%s/rosco/messages/%s.h", h_dest_dir, message_type_names.strs.data[i]);
       char *c_path = dsk_strdup_printf ("%s/rosco/messages/%s.c", c_dest_dir, message_type_names.strs.data[i]);
       dsk_buffer_dump (&h_code, h_path, DSK_BUFFER_DUMP_DRAIN|DSK_BUFFER_DUMP_FATAL_ERRORS, NULL);
